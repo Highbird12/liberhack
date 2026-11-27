@@ -38,4 +38,15 @@ Targets .NET 10; for an older SDK change `TargetFramework` and the `10.0.*` pack
 ## Notes
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).
 - Uploads must be .docx or a text-based PDF (scans cannot be read).
-- If you change the models, delete `app.db` so it is recreated.
+- The database is updated with EF Core migrations (in `Data/Migrations`). The app applies any new ones when it starts, so you never need to delete `app.db`. A database made before migrations were added is detected and kept as it is.
+
+## Changing the data model
+After changing a model (for example adding a field to `Book`), create a migration and commit it with your change:
+
+    dotnet tool restore
+    dotnet ef migrations add AddBookYear --output-dir Data/Migrations
+
+Use a name that says what changed. `dotnet tool restore` is only needed once per PC.
+Start the app and the change is applied to your `app.db`; teammates get it the same way after they pull.
+To undo a migration you have not pushed yet: `dotnet ef migrations remove`.
+Two people adding migrations at the same time can conflict, so tell the team before you add one.
