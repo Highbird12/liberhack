@@ -20,6 +20,7 @@ if (!string.IsNullOrEmpty(gid) && !string.IsNullOrEmpty(gsecret))
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+app.Logger.LogInformation("Database: {Target}", DatabaseConfig.Describe(builder.Configuration));
 
 using (var scope = app.Services.CreateScope())
     await SeedData.InitAsync(scope.ServiceProvider);
