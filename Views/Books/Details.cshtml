@@ -1,0 +1,28 @@
+@model BookLibrary.Models.Book
+@{
+  ViewData["Title"] = Model.Title;
+  var bg = Model.Translations.FirstOrDefault();
+  bool read = ViewBag.Read == true;
+}
+@if (TempData["Msg"] is string msg) { <div class="alert alert-success">@msg</div> }
+<a asp-controller="Home" asp-action="Index">Back to library</a>
+<h1 class="mt-2">@Model.Title</h1>
+<p class="text-muted">@Model.Author, @Model.Nationality</p>
+<p style="max-width:70ch">@Model.Summary</p>
+<div class="mb-4">
+  @if (bg != null)
+  {
+    <a class="btn btn-success" asp-action="Details" asp-route-id="@Model.Id" asp-route-read="true">Read in Bulgarian</a>
+    <a class="btn btn-outline-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+  }
+  else
+  {
+    <a class="btn btn-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+    <a class="btn btn-outline-primary" asp-action="Submit" asp-route-id="@Model.Id">Translate to Bulgarian</a>
+  }
+</div>
+@if (read && bg != null)
+{
+  <hr />
+  <div style="white-space:pre-wrap;max-width:70ch;line-height:1.7">@bg.Text</div>
+}

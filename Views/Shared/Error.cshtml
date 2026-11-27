@@ -1,0 +1,5 @@
+@model ErrorViewModel
+@{ ViewData["Title"] = "Error"; }
+<h1 class="text-danger">Something went wrong.</h1>
+@if (Model.ShowRequestId) { <p><code>Request ID: @Model.RequestId</code></p> }
+<a asp-controller="Home" asp-action="Index">Back to library</a>

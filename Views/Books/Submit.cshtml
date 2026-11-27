@@ -1,0 +1,12 @@
+@model BookLibrary.Models.Book
+@{ ViewData["Title"] = "Translate " + Model.Title; }
+<h1>Translate: @Model.Title</h1>
+<p>Upload your full Bulgarian translation as a Word (.docx) or PDF file. An admin will check it before it appears in the library.</p>
+<div asp-validation-summary="All" class="text-danger"></div>
+<form method="post" enctype="multipart/form-data">
+  <div class="mb-3">
+    <input type="file" name="file" accept=".docx,.pdf" class="form-control" required />
+  </div>
+  <button class="btn btn-primary">Submit for review</button>
+  <a class="btn btn-link" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+</form>

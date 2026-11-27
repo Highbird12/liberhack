@@ -1,0 +1,10 @@
+@model BookLibrary.Models.Translation
+@{ ViewData["Title"] = "Review"; }
+<h1>@Model.Book?.Title</h1>
+<p class="text-muted">Submitted by @Model.TranslatorName on @Model.SubmittedAt.ToString("yyyy-MM-dd HH:mm"). Status: @Model.Status</p>
+<div class="border p-3 mb-3" style="white-space:pre-wrap;max-height:60vh;overflow:auto">@Model.Text</div>
+<form method="post" asp-action="Decide" asp-route-id="@Model.Id">
+  <button name="approve" value="true" class="btn btn-success">Approve and publish</button>
+  <button name="approve" value="false" class="btn btn-danger">Reject</button>
+  <a class="btn btn-link" asp-action="Index">Back</a>
+</form>
