@@ -13,6 +13,7 @@
       <ul class="navbar-nav me-auto">
         @if (User.IsInRole("Admin"))
         {
+          <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="AdminBooks" asp-action="Index">Manage books</a></li>
           <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">Translation requests</a></li>
         }
       </ul>

@@ -1,0 +1,78 @@
+@model BookLibrary.Models.BookForm
+@{
+  var isEdit = Model.Id != 0;
+  ViewData["Title"] = isEdit ? "Edit " + Model.Title : "Add book";
+  var nationalities = ViewBag.Nationalities as List<string> ?? new List<string>();
+}
+<a asp-action="Index">Back to books</a>
+<h1 class="mt-2">@(isEdit ? "Edit book" : "Add book")</h1>
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form method="post" enctype="multipart/form-data" asp-action="@(isEdit ? "Edit" : "Create")" style="max-width:40rem">
+  <input type="hidden" asp-for="Id" />
+
+  <div class="mb-3">
+    <label asp-for="Title" class="form-label"></label>
+    <input asp-for="Title" class="form-control" />
+    <span asp-validation-for="Title" class="text-danger"></span>
+  </div>
+
+  <div class="mb-3">
+    <label asp-for="Author" class="form-label"></label>
+    <input asp-for="Author" class="form-control" />
+    <span asp-validation-for="Author" class="text-danger"></span>
+  </div>
+
+  <div class="mb-3">
+    <label asp-for="Nationality" class="form-label"></label>
+    <input asp-for="Nationality" class="form-control" list="nationality-list" autocomplete="off" />
+    <datalist id="nationality-list">
+      @foreach (var n in nationalities) { <option value="@n"></option> }
+    </datalist>
+    <div class="form-text">Books are grouped by this on the home page. Pick an existing one or type a new one.</div>
+    <span asp-validation-for="Nationality" class="text-danger"></span>
+  </div>
+
+  <div class="mb-3">
+    <label asp-for="Summary" class="form-label"></label>
+    <textarea asp-for="Summary" class="form-control" rows="5"></textarea>
+    <span asp-validation-for="Summary" class="text-danger"></span>
+  </div>
+
+  <div class="mb-3">
+    <label asp-for="Cover" class="form-label"></label>
+    @if (!string.IsNullOrEmpty(Model.CurrentCoverUrl))
+    {
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <img src="@Model.CurrentCoverUrl" alt="Current cover" style="width:60px;height:84px;object-fit:cover;border-radius:4px" />
+        <div class="form-check">
+          <input asp-for="RemoveCover" class="form-check-input" />
+          <label asp-for="RemoveCover" class="form-check-label"></label>
+        </div>
+      </div>
+    }
+    <input asp-for="Cover" type="file" accept=".png,.jpg,.jpeg,.webp" class="form-control" />
+    @if (isEdit) { <div class="form-text">Leave empty to keep the current cover.</div> }
+    <span asp-validation-for="Cover" class="text-danger"></span>
+  </div>
+
+  <div class="mb-3">
+    <label asp-for="Pdf" class="form-label"></label>
+    @if (!string.IsNullOrEmpty(Model.CurrentPdf))
+    {
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <a href="@Model.CurrentPdf" target="_blank">Current PDF</a>
+        <div class="form-check">
+          <input asp-for="RemovePdf" class="form-check-input" />
+          <label asp-for="RemovePdf" class="form-check-label"></label>
+        </div>
+      </div>
+    }
+    <input asp-for="Pdf" type="file" accept=".pdf" class="form-control" />
+    @if (isEdit) { <div class="form-text">Leave empty to keep the current PDF.</div> }
+    <span asp-validation-for="Pdf" class="text-danger"></span>
+  </div>
+
+  <button class="btn btn-primary">@(isEdit ? "Save changes" : "Add book")</button>
+  <a class="btn btn-link" asp-action="Index">Cancel</a>
+</form>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

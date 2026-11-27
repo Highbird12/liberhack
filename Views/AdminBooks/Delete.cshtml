@@ -1,0 +1,18 @@
+@model BookLibrary.Models.Book
+@{
+  ViewData["Title"] = "Delete " + Model.Title;
+  var translationCount = (int)(ViewBag.TranslationCount ?? 0);
+}
+<h1>Delete book</h1>
+<p>Are you sure you want to delete <strong>@Model.Title</strong> by @Model.Author?</p>
+@if (translationCount > 0)
+{
+  <div class="alert alert-warning">
+    This book has @translationCount translation@(translationCount == 1 ? "" : "s") (pending, approved or rejected).
+    They will be deleted too.
+  </div>
+}
+<form method="post" asp-action="Delete" asp-route-id="@Model.Id">
+  <button class="btn btn-danger">Delete</button>
+  <a class="btn btn-link" asp-action="Index">Cancel</a>
+</form>
