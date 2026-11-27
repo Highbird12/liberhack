@@ -38,6 +38,14 @@ public static class DatabaseConfig
         return builder.ConnectionString;
     }
 
+    // A safe description for the startup log: where the app connects and as whom. Never the password.
+    public static string Describe(IConfiguration config)
+    {
+        var b = new NpgsqlConnectionStringBuilder(GetConnectionString(config));
+        return $"{b.Host}:{b.Port}/{b.Database} as user \"{b.Username}\", " +
+               $"password {(string.IsNullOrEmpty(b.Password) ? "NOT set" : "set")}, ssl {b.SslMode}";
+    }
+
     // Reads postgresql://user:password@host:port/database?options by hand instead of with System.Uri,
     // which rejects passwords containing characters such as @ # / ? [ ]. The password is everything
     // between the first ":" and the LAST "@", so Supabase's generated passwords work as pasted.
