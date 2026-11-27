@@ -1,7 +1,7 @@
 # Book Library (demo)
 
 ASP.NET Core MVC + Identity + SQLite.
-tova e sait za chetene na BG sknigi i davane na submisions na bg prevodi na ne prevedeni knigi, vse oshte ne sum go testval. pitaj ai za oshte info kum coda ko shto
+
 
 ## Run
     dotnet run
