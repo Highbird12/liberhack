@@ -15,7 +15,7 @@ The app uses PostgreSQL. There is no database address or password in the code. E
 
        dotnet user-secrets set "ConnectionStrings:Default" "postgresql://postgres:YOUR_PASSWORD@db.xxxx.supabase.co:5432/postgres"
 
-   Connections to remote databases are encrypted automatically. Special characters in the password must be URL-encoded (`@` becomes `%40`).
+   Connections to remote databases are encrypted automatically. Paste the password as it is, including symbols such as `@`, `#` or `/`. Only a literal `%` must be written as `%25`. Do not keep the square brackets around `[YOUR-PASSWORD]` from Supabase's example. In PowerShell put the whole string in single quotes.
 
 **Option 2: Postgres on your own PC**
 
