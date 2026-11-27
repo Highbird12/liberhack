@@ -1,14 +1,34 @@
 @model BookLibrary.Models.Book
 @{
   ViewData["Title"] = Model.Title;
+  // The controller loads approved translations newest first.
   var bg = Model.Translations.FirstOrDefault();
   bool read = ViewBag.Read == true;
+  var mine = ViewBag.Mine as Translation;
+  var minePending = mine?.Status == TranslationStatus.Pending;
 }
 @if (TempData["Msg"] is string msg) { <div class="alert alert-success">@msg</div> }
 <a asp-controller="Home" asp-action="Index">Back to library</a>
 <h1 class="mt-2">@Model.Title</h1>
 <p class="text-muted">@Model.Author, @Model.Nationality</p>
 <p style="max-width:70ch">@Model.Summary</p>
+@if (minePending)
+{
+  <div class="alert alert-secondary" style="max-width:70ch">
+    Your translation of this book is waiting for review. You can follow it on <a asp-action="Mine">My translations</a>.
+  </div>
+}
+else if (mine?.Status == TranslationStatus.Rejected && bg == null)
+{
+  <div class="alert alert-warning" style="max-width:70ch">
+    Your translation was not accepted.
+    @if (!string.IsNullOrEmpty(mine.RejectionReason))
+    {
+      <div class="mt-1" style="white-space:pre-wrap"><strong>Reason:</strong> @mine.RejectionReason</div>
+    }
+    <div class="mt-1">You can fix it and send a new version.</div>
+  </div>
+}
 <div class="mb-4">
   @if (bg != null)
   {
@@ -24,7 +44,10 @@
     {
       <a class="btn btn-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
     }
-    <a class="btn btn-outline-primary" asp-action="Submit" asp-route-id="@Model.Id">Translate to Bulgarian</a>
+    @if (!minePending)
+    {
+      <a class="btn btn-outline-primary" asp-action="Submit" asp-route-id="@Model.Id">@(mine?.Status == TranslationStatus.Rejected ? "Send a new version" : "Translate to Bulgarian")</a>
+    }
   }
 </div>
 @if (read && bg != null)

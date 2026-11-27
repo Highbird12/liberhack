@@ -1,0 +1,43 @@
+@model List<BookLibrary.Models.Translation>
+@{ ViewData["Title"] = "My translations"; }
+<h1>My translations</h1>
+@if (!Model.Any())
+{
+  <p class="text-muted">You haven't submitted any translations yet. Open a book without a Bulgarian translation and click <strong>Translate to Bulgarian</strong>.</p>
+}
+else
+{
+  // A new version can be sent for a book only when nothing of yours for it is waiting for review.
+  var pendingBooks = Model.Where(t => t.Status == TranslationStatus.Pending).Select(t => t.BookId).ToHashSet();
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <tr><th>Book</th><th>Submitted</th><th>Status</th><th></th></tr>
+      @foreach (var t in Model)
+      {
+        <tr>
+          <td><a asp-action="Details" asp-route-id="@t.BookId">@t.Book?.Title</a></td>
+          <td class="text-nowrap">@t.SubmittedAt.ToString("yyyy-MM-dd")</td>
+          <td>
+            @switch (t.Status)
+            {
+              case TranslationStatus.Pending: <span class="badge text-bg-secondary">Waiting for review</span> break;
+              case TranslationStatus.Approved: <span class="badge text-bg-success">Published</span> break;
+              case TranslationStatus.Rejected: <span class="badge text-bg-danger">Rejected</span> break;
+              case TranslationStatus.Replaced: <span class="badge text-bg-light border">Replaced by a newer translation</span> break;
+            }
+            @if (t.Status == TranslationStatus.Rejected && !string.IsNullOrEmpty(t.RejectionReason))
+            {
+              <div class="small mt-1" style="white-space:pre-wrap"><strong>Reason:</strong> @t.RejectionReason</div>
+            }
+          </td>
+          <td class="text-end">
+            @if (t.Status == TranslationStatus.Rejected && !pendingBooks.Contains(t.BookId))
+            {
+              <a class="btn btn-sm btn-outline-primary text-nowrap" asp-action="Submit" asp-route-id="@t.BookId">Send a new version</a>
+            }
+          </td>
+        </tr>
+      }
+    </table>
+  </div>
+}
