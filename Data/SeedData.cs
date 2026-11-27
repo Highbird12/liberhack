@@ -13,6 +13,7 @@ public static class SeedData
     {
         var db = sp.GetRequiredService<ApplicationDbContext>();
         await db.Database.MigrateAsync();
+        await EnsureRowLevelSecurityAsync(sp, db);
 
         var roles = sp.GetRequiredService<RoleManager<IdentityRole>>();
         if (!await roles.RoleExistsAsync("Admin")) await roles.CreateAsync(new IdentityRole("Admin"));
@@ -31,6 +32,36 @@ public static class SeedData
                 B("Around the World in 80 Days", "Jules Verne", "French", "Phileas Fogg bets he can circle the globe in eighty days.", "eighty-days"),
                 B("Moby-Dick", "Herman Melville", "American", "Captain Ahab's obsessive hunt for a white whale drives his crew to disaster.", "moby"));
             await db.SaveChangesAsync();
+        }
+    }
+
+    // Supabase exposes tables in the public schema through its Data API, which anyone holding the
+    // project's public key can call. Turning on row-level security with no policies blocks that
+    // access completely. This app connects as the table owner, which is not affected by it.
+    // Runs on every start so tables added by future migrations are covered too, and only touches
+    // tables that do not have it yet. A failure is logged, not fatal, so a database where this
+    // user is not allowed to change the tables still starts.
+    static async Task EnsureRowLevelSecurityAsync(IServiceProvider sp, ApplicationDbContext db)
+    {
+        var log = sp.GetRequiredService<ILoggerFactory>().CreateLogger("SeedData");
+        try
+        {
+            var unsecured = await db.Database
+                .SqlQueryRaw<string>("SELECT tablename AS \"Value\" FROM pg_tables WHERE schemaname = 'public' AND NOT rowsecurity")
+                .ToListAsync();
+            if (unsecured.Count == 0) return;
+
+            await db.Database.ExecuteSqlRawAsync(
+                "DO $$ DECLARE r record; BEGIN " +
+                "FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND NOT rowsecurity LOOP " +
+                "EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', r.tablename); " +
+                "END LOOP; END $$;");
+            log.LogInformation("Turned on row-level security for: {Tables}", string.Join(", ", unsecured));
+        }
+        catch (Exception ex)
+        {
+            log.LogWarning(ex, "Could not turn on row-level security. If this database is exposed through an API " +
+                               "(for example Supabase's Data API), enable it by hand; see the README.");
         }
     }
 
