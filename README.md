@@ -1,13 +1,35 @@
 # Book Library (demo)
 
-ASP.NET Core MVC + Identity + SQLite.
+ASP.NET Core MVC + Identity + PostgreSQL (Supabase).
 
 
 A site for reading books and for sending in Bulgarian translations of books that have none. Visitors browse and search the library. Logged-in users submit translations as .docx or PDF files. An admin reviews each one and approves or rejects it, and approved translations are published on the book page. Admins also add, edit and delete books.
 
+## Database
+The app uses PostgreSQL. There is no database address or password in the code. Each person sets the connection string once, with user secrets (stored on your PC, outside the repo). Pick one:
+
+**Option 1: Supabase** (recommended for the team and for hosting)
+1. Create a project at supabase.com and set a database password.
+2. In the project, click **Connect** and copy the **Direct connection** string (or the **Session pooler** one if your network has no IPv6). It looks like `postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres`. Do not use the Transaction pooler (port 6543) for this app: it applies migrations at startup, which needs a normal session.
+3. Put your real password in place of `[PASSWORD]` and save the string:
+
+       dotnet user-secrets set "ConnectionStrings:Default" "postgresql://postgres:YOUR_PASSWORD@db.xxxx.supabase.co:5432/postgres"
+
+   Connections to remote databases are encrypted automatically. Special characters in the password must be URL-encoded (`@` becomes `%40`).
+
+**Option 2: Postgres on your own PC**
+
+    dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Database=booklibrary;Username=postgres;Password=YOUR_PASSWORD"
+
+Create the empty database first (`createdb booklibrary`); the app creates the tables itself.
+
+**On a server** set the environment variable `ConnectionStrings__Default` instead.
+
+Everyone who uses the same connection string shares the same data (books, users, translations). Use a separate Supabase project, or Option 2, if you want your own test data.
+
 ## Run
     dotnet run
-Open https://localhost:7080 (first run creates `app.db` and seeds 8 books).
+Open https://localhost:7080. On first start the app creates the tables and seeds 8 books. Without a database setting it stops with a message that says what to set.
 Targets .NET 10; for an older SDK change `TargetFramework` and the `10.0.*` package versions in BookLibrary.csproj.
 
 In Visual Studio, open `BookLibrary.csproj`, pick the **BookLibrary** profile and press F5. If the browser warns about the HTTPS certificate, run `dotnet dev-certs https --trust` once.
@@ -67,7 +89,7 @@ In Visual Studio, open `BookLibrary.csproj`, pick the **BookLibrary** profile an
 ## Project layout
 - `Controllers/`: `HomeController` (library and search), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management)
 - `Models/`: `Book`, `Translation` and `TranslationStatus` (Pending, Approved, Rejected, Replaced), `BookForm` (admin add/edit form)
-- `Data/`: `ApplicationDbContext`, `SeedData` (migrations, sample books, admin account), `Migrations/`
+- `Data/`: `ApplicationDbContext`, `DatabaseConfig` (reads the connection string), `SeedData` (migrations, sample books, admin account), `Migrations/`
 - `Views/`: Razor pages for each controller
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
 - `test-files/`: a sample .docx translation
@@ -75,8 +97,8 @@ In Visual Studio, open `BookLibrary.csproj`, pick the **BookLibrary** profile an
 ## Notes
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).
 - Translation uploads must be .docx or a text-based PDF (scans cannot be read). A .docx with no readable body is treated as unreadable instead of crashing.
-- Files in `wwwroot/uploads/` and `app.db` stay on your own PC; they are not in git. A server needs somewhere permanent for them.
-- The database is updated with EF Core migrations (in `Data/Migrations`). The app applies any new ones when it starts, so you never need to delete `app.db`. A database made before migrations were added is detected and kept as it is.
+- Files in `wwwroot/uploads/` stay on the machine that uploaded them; they are not in git and not in the database. A server needs somewhere permanent for them (a disk, or Supabase Storage).
+- The database is updated with EF Core migrations (in `Data/Migrations`). The app applies any new ones when it starts, so there is no need to reset the database after a model change.
 
 ## Changing the data model
 After changing a model (for example adding a field to `Book`), create a migration and commit it with your change:
@@ -85,12 +107,13 @@ After changing a model (for example adding a field to `Book`), create a migratio
     dotnet ef migrations add AddBookYear --output-dir Data/Migrations
 
 Use a name that says what changed. `dotnet tool restore` is only needed once per PC.
-Start the app and the change is applied to your `app.db`; teammates get it the same way after they pull.
-To undo a migration you have not pushed yet: `dotnet ef migrations remove`.
-Two people adding migrations at the same time can conflict, so tell the team before you add one.
+The command needs the database setting (see Database above), so it works once your user secret is set.
+Start the app and the change is applied to the database. If the team shares one database, the first person to start the new code applies it for everyone, so tell the team before you add a migration.
+To undo a migration you have not pushed or applied yet: `dotnet ef migrations remove`.
+Two people adding migrations at the same time can conflict.
 
 ## What changed so far
-Work is on the branch `claude/keen-davinci-s4eek9` and has not been merged into `main`.
+Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `claude/keen-davinci-s4eek9` and is not merged yet.
 
 1. **Null fix**: reading a broken .docx no longer risks a `NullReferenceException` (`BooksController.ExtractText`).
 2. **Manage books** for admins: add, edit and delete books, with cover and PDF uploads (`AdminBooksController`, `BookForm`, `Views/AdminBooks`).
@@ -99,11 +122,12 @@ Work is on the branch `claude/keen-davinci-s4eek9` and has not been merged into 
 5. **EF Core migrations** replace `EnsureCreated`: model changes no longer require deleting `app.db`, and databases from before migrations are kept.
 6. **Translation review fixes**: decide once, one published translation per book (older ones become Replaced), rejection reasons, the My translations page, and one pending translation per user per book. Migration `TranslationReview` adds `SubmittedByUserId`, `DecidedAt` and `RejectionReason`.
 7. `.gitignore` now also ignores `wwwroot/uploads/`, `.vs/` and the SQLite side files.
+8. **Database switched from SQLite to PostgreSQL (Supabase)**: new `DatabaseConfig` reads `ConnectionStrings:Default` (Npgsql or `postgresql://` form, encryption on for remote hosts), the SQLite package and the SQLite-only upgrade code are gone, and the migrations were regenerated for Postgres as a single `InitialCreate`. Data in an old local `app.db` is not carried over.
 
 ## Not done yet
 - Automated tests (everything so far was checked by hand in a browser).
 - More book details such as year, language or a hidden/published flag. Decide with the team first.
-- Hosting and permanent storage for uploads.
+- Hosting (for example a Dockerfile for Render) and permanent storage for uploads (Supabase Storage).
 - Email confirmation, password reset by email, and a page for admins to manage users.
 - Google login is untested.
 - The first commit in git history still contains the old hardcoded admin password. Change that password anywhere it was used.

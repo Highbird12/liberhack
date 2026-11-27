@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlite("Data Source=app.db"));
+builder.Services.AddDbContext<ApplicationDbContext>(o =>
+    o.UseNpgsql(DatabaseConfig.GetConnectionString(builder.Configuration)));
 builder.Services.AddDefaultIdentity<IdentityUser>(o => o.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
