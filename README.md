@@ -98,6 +98,7 @@ In Visual Studio, open `BookLibrary.csproj`, pick the **BookLibrary** profile an
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).
 - Translation uploads must be .docx or a text-based PDF (scans cannot be read). A .docx with no readable body is treated as unreadable instead of crashing.
 - Files in `wwwroot/uploads/` stay on the machine that uploaded them; they are not in git and not in the database. A server needs somewhere permanent for them (a disk, or Supabase Storage).
+- **Row-level security is turned on automatically.** Supabase exposes tables in the `public` schema through its Data API, which anyone holding the project's public key can call. On every start the app turns on row-level security (with no policies, which blocks that access) for any table that does not have it yet, including tables added by future migrations, and logs the table names. The app itself is not affected because it connects as the table owner (Supabase's `postgres` user). Do not connect with a different, non-owner database user: row-level security would hide the tables from it. If the connected user may not change the tables, the app logs a warning and starts anyway; then run `ALTER TABLE public."TableName" ENABLE ROW LEVEL SECURITY;` yourself in the SQL Editor.
 - The database is updated with EF Core migrations (in `Data/Migrations`). The app applies any new ones when it starts, so there is no need to reset the database after a model change.
 
 ## Changing the data model
@@ -123,6 +124,7 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 6. **Translation review fixes**: decide once, one published translation per book (older ones become Replaced), rejection reasons, the My translations page, and one pending translation per user per book. Migration `TranslationReview` adds `SubmittedByUserId`, `DecidedAt` and `RejectionReason`.
 7. `.gitignore` now also ignores `wwwroot/uploads/`, `.vs/` and the SQLite side files.
 8. **Database switched from SQLite to PostgreSQL (Supabase)**: new `DatabaseConfig` reads `ConnectionStrings:Default` (Npgsql or `postgresql://` form, encryption on for remote hosts), the SQLite package and the SQLite-only upgrade code are gone, and the migrations were regenerated for Postgres as a single `InitialCreate`. Data in an old local `app.db` is not carried over.
+9. **Row-level security on every table**, applied automatically at startup (see Notes), so Supabase's public API key cannot read or change the app's tables.
 
 ## Not done yet
 - Automated tests (everything so far was checked by hand in a browser).
