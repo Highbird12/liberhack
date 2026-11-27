@@ -11,6 +11,10 @@
     <div class="container">
       <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Book Library</a>
       <ul class="navbar-nav me-auto">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+          <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Books" asp-action="Mine">My translations</a></li>
+        }
         @if (User.IsInRole("Admin"))
         {
           <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="AdminBooks" asp-action="Index">Manage books</a></li>

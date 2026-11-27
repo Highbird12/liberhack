@@ -32,8 +32,9 @@ Targets .NET 10; for an older SDK change `TargetFramework` and the `10.0.*` pack
 1. Home: click a nationality to expand it and see covers, click a book. Use the search box to find a book by title or author, or filter by nationality.
 2. A book with no Bulgarian translation shows **Read in English** (opens the PDF) and **Translate to Bulgarian**.
 3. Log in as a normal user, press Translate, upload `test-files/sample-bulgarian-translation.docx`.
-4. Log in as admin, open **Translation requests**, read the text, Approve or Reject.
-5. After approval the book shows **Read in Bulgarian**.
+4. Log in as admin, open **Translation requests**, read the text, Approve or Reject (optionally with a reason).
+5. After approval the book shows **Read in Bulgarian**. Approving another translation of the same book replaces it.
+6. The translator follows their submissions on **My translations**: waiting, published, rejected (with the reason) or replaced. After a rejection they can send a new version. Each user can have one translation per book waiting for review.
 
 ## Notes
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).

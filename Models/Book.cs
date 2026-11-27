@@ -1,6 +1,8 @@
 namespace BookLibrary.Models;
 
-public enum TranslationStatus { Pending, Approved, Rejected }
+// Stored as numbers: only add new values at the end.
+// Replaced = was approved, then a newer translation of the same book was approved.
+public enum TranslationStatus { Pending, Approved, Rejected, Replaced }
 
 public class Book
 {
@@ -20,7 +22,13 @@ public class Translation
     public int BookId { get; set; }
     public Book? Book { get; set; }
     public string TranslatorName { get; set; } = "";
+    // Identity user id of the submitter. Null for translations submitted before this field existed.
+    public string? SubmittedByUserId { get; set; }
     public string Text { get; set; } = "";
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
     public TranslationStatus Status { get; set; } = TranslationStatus.Pending;
+    // When an admin approved or rejected it.
+    public DateTime? DecidedAt { get; set; }
+    // Optional note from the admin when rejecting, shown to the translator.
+    public string? RejectionReason { get; set; }
 }

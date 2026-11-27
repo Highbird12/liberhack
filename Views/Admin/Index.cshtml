@@ -1,5 +1,6 @@
 @model List<BookLibrary.Models.Translation>
 @{ ViewData["Title"] = "Translation requests"; }
+@if (TempData["Msg"] is string msg) { <div class="alert alert-info">@msg</div> }
 <h1>Translation requests</h1>
 @if (!Model.Any())
 {
