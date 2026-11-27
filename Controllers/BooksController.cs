@@ -60,7 +60,9 @@ public class BooksController : Controller
         if (ext == ".docx")
         {
             using var doc = WordprocessingDocument.Open(ms, false);
-            return string.Join("\n\n", doc.MainDocumentPart!.Document.Body!.Elements<Paragraph>().Select(p => p.InnerText));
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body == null) return "";
+            return string.Join("\n\n", body.Elements<Paragraph>().Select(p => p.InnerText));
         }
         if (ext == ".pdf")
         {
