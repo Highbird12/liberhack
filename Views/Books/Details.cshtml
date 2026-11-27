@@ -13,11 +13,17 @@
   @if (bg != null)
   {
     <a class="btn btn-success" asp-action="Details" asp-route-id="@Model.Id" asp-route-read="true">Read in Bulgarian</a>
-    <a class="btn btn-outline-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+    @if (!string.IsNullOrEmpty(Model.EnglishPdf))
+    {
+      <a class="btn btn-outline-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+    }
   }
   else
   {
-    <a class="btn btn-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+    @if (!string.IsNullOrEmpty(Model.EnglishPdf))
+    {
+      <a class="btn btn-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+    }
     <a class="btn btn-outline-primary" asp-action="Submit" asp-route-id="@Model.Id">Translate to Bulgarian</a>
   }
 </div>

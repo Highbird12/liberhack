@@ -9,7 +9,10 @@
   <h1>Library</h1>
   @if (User.IsInRole("Admin"))
   {
-    <a class="btn btn-warning" asp-controller="Admin" asp-action="Index">Translation requests</a>
+    <div>
+      <a class="btn btn-outline-secondary" asp-controller="AdminBooks" asp-action="Index">Manage books</a>
+      <a class="btn btn-warning" asp-controller="Admin" asp-action="Index">Translation requests</a>
+    </div>
   }
 </div>
 <div class="accordion" id="natList">
