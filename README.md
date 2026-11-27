@@ -10,7 +10,15 @@ Targets .NET 10; for an older SDK change `TargetFramework` and the `10.0.*` pack
 
 ## Accounts
 - Register / Log in: the Identity pages under the top-right menu.
-- Demo admin: `admin@demo.local` / `Admin123!` (remove or change before going online, see Data/SeedData.cs).
+- The admin account is not in the code. Each person sets their own once, with user secrets (stored on your PC, outside the repo):
+
+      dotnet user-secrets set "Admin:Email" "you@example.com"
+      dotnet user-secrets set "Admin:Password" "YourPassword1!"
+
+  The password needs upper and lower case, a digit and a symbol. Restart the app and the account is created.
+  If the email belongs to an account that already exists, that account becomes admin (its password is not changed).
+- On a server, set the environment variables `Admin__Email` and `Admin__Password` instead.
+- Without these settings the app still runs, but no admin is created (a warning is logged at startup).
 
 ## Google login (optional)
 1. Google Cloud Console > APIs & Services > Credentials > Create OAuth client ID (Web application).
@@ -21,7 +29,7 @@ Targets .NET 10; for an older SDK change `TargetFramework` and the `10.0.*` pack
 4. Restart. A "Google" button appears on the Log in and Register pages. Without keys it stays hidden.
 
 ## Flow to try
-1. Home: click a nationality to expand it and see covers, click a book.
+1. Home: click a nationality to expand it and see covers, click a book. Use the search box to find a book by title or author, or filter by nationality.
 2. A book with no Bulgarian translation shows **Read in English** (opens the PDF) and **Translate to Bulgarian**.
 3. Log in as a normal user, press Translate, upload `test-files/sample-bulgarian-translation.docx`.
 4. Log in as admin, open **Translation requests**, read the text, Approve or Reject.
