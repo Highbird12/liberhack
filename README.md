@@ -5,7 +5,7 @@ ASP.NET Core MVC + Identity + PostgreSQL (Supabase).
 
 A site for reading books and for sending in Bulgarian translations of books that have none. Visitors browse and search the library. Logged-in users submit translations as .docx or PDF files. An admin reviews each one and approves or rejects it, and approved translations are published on the book page. Admins also add, edit and delete books.
 
-**Book Library is open source.** Anyone can read the code, run their own copy and suggest changes through a pull request. The project does not have a licence file yet: until the team adds one (for example MIT), the code is legally "all rights reserved" by default, so choose a licence and add it as `LICENSE` in the repository root.
+**Book Library is open source** under the MIT licence (see `LICENSE`). Anyone can read the code, run their own copy, change it and suggest changes through a pull request.
 
 ## Database
 The app uses PostgreSQL. There is no database address or password in the code. Each person sets the connection string once, with user secrets (stored on your PC, outside the repo). Pick one:
