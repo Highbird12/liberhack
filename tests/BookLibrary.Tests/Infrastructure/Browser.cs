@@ -32,6 +32,9 @@ public class Browser
 
     public static IHtmlDocument Parse(string html) => Parser.ParseDocument(html);
 
+    // The page's visible text, as a browser shows it (HTML codes such as &#xE9; decoded).
+    public async Task<string> TextAsync(string url) => Parse(await PageAsync(url)).Body?.TextContent ?? "";
+
     // Loads formPage to get its anti-forgery token, then posts the fields (and files) to action.
     public async Task<HttpResponseMessage> PostFormAsync(string formPage, string action,
         Dictionary<string, string> fields, params (string Field, string FileName, string ContentType, byte[] Bytes)[] files)
