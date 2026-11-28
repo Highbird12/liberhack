@@ -1,4 +1,5 @@
 using BookLibrary.Data;
+using BookLibrary.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,11 +31,24 @@ if (!string.IsNullOrEmpty(gid) && !string.IsNullOrEmpty(gsecret))
 
 builder.Services.AddControllersWithViews();
 
+// Admin uploads: Supabase Storage when Storage:Supabase:Url and :Key are set (needed on a host,
+// whose disk is wiped on every deploy), otherwise the local wwwroot/uploads folder.
+if (SupabaseFileStorage.IsConfigured(builder.Configuration))
+    builder.Services.AddHttpClient<IFileStorage, SupabaseFileStorage>(c => c.Timeout = TimeSpan.FromMinutes(2));
+else
+    builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+
 var app = builder.Build();
 app.Logger.LogInformation("Database: {Target}", DatabaseConfig.Describe(builder.Configuration));
 
 using (var scope = app.Services.CreateScope())
+{
     await SeedData.InitAsync(scope.ServiceProvider);
+
+    var storage = scope.ServiceProvider.GetRequiredService<IFileStorage>();
+    app.Logger.LogInformation("Uploads: {Storage}", storage.Description);
+    if (storage is SupabaseFileStorage supabase) await supabase.EnsureBucketAsync();
+}
 
 if (!app.Environment.IsDevelopment())
 {
