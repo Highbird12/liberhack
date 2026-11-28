@@ -24,7 +24,9 @@ Live at https://book-library-jsmg.onrender.com (Render service `book-library`, a
 - Tests: `dotnet test tests/BookLibrary.Tests`. They need PostgreSQL on localhost:5432 (user and password `postgres`) or `TEST_DATABASE` set to a server connection string. GitHub runs them on every pull request (`.github/workflows/tests.yml`).
 - Add or update tests with every change, and keep them all passing. Also try the affected pages by hand when the change is visual.
 - Settings come from user secrets locally and environment variables on Render (double underscores there):
-  `ConnectionStrings:Default`, `Admin:Email`, `Admin:Password`, `Storage:Supabase:Url`, `Storage:Supabase:Key`, optional `Storage:Supabase:Bucket`.
+  `ConnectionStrings:Default`, `Admin:Email`, `Admin:Password`, `Storage:Supabase:Url`, `Storage:Supabase:Key`, optional `Storage:Supabase:Bucket`,
+  `Email:Resend:ApiKey`, `Email:From`, optional `Email:RequestsPer15Minutes`.
+- Email (`Services/Email.cs`) goes through Resend's web API, never SMTP (Render's free plan blocks SMTP ports). With the email settings present, new accounts must confirm their email and "Forgot password" sends a link; without them nothing is sent. Settings that change behaviour are read lazily (options, per request) so the tests can switch them with `UseSetting`.
 
 ## Rules
 - Never put passwords, connection strings or keys in the repo, in commits, in logs, or in chat. Use placeholders in examples. If the user pastes one, tell them to reset it.

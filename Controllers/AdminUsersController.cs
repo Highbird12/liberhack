@@ -29,7 +29,7 @@ public class AdminUsersController : Controller
     }
 
     public record UserRow(string Id, string Email, bool IsAdmin, bool IsBlocked, DateTimeOffset? LockedUntil,
-                          int Translations, bool IsSelf, bool IsConfiguredAdmin);
+                          int Translations, bool IsSelf, bool IsConfiguredAdmin, bool EmailConfirmed);
 
     public async Task<IActionResult> Index(string? q)
     {
@@ -55,7 +55,8 @@ public class AdminUsersController : Controller
             u.LockoutEnd is { } end && end > now && end != BlockedUntil ? end : null,
             counts.GetValueOrDefault(u.Id),
             u.Id == me,
-            IsConfiguredAdmin(u))).ToList());
+            IsConfiguredAdmin(u),
+            u.EmailConfirmed)).ToList());
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -107,6 +108,20 @@ public class AdminUsersController : Controller
         await _users.SetLockoutEndDateAsync(user, null);
         await _users.ResetAccessFailedCountAsync(user);
         return Done($"{user.Email} can log in again.");
+    }
+
+    // For someone whose confirmation email never arrived: lets them log in without it.
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmEmail(string id)
+    {
+        var user = await _users.FindByIdAsync(id);
+        if (user == null) return NotFound();
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            await _users.UpdateAsync(user);
+        }
+        return Done($"{user.Email}'s email address is now confirmed; they can log in.");
     }
 
     // Creates a one-time link for choosing a new password, for users who forgot theirs.
