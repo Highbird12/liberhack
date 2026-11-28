@@ -24,7 +24,7 @@ public class BooksController : Controller
                 .Where(x => x.Status == TranslationStatus.Approved)
                 .OrderByDescending(x => x.DecidedAt ?? x.SubmittedAt))
             .FirstOrDefaultAsync(b => b.Id == id);
-        if (book == null) return NotFound();
+        if (book == null || !CanSee(book)) return NotFound();
         ViewBag.Read = read;
 
         // The signed-in user's latest submission for this book, to show its status.
@@ -57,7 +57,7 @@ public class BooksController : Controller
     public async Task<IActionResult> Submit(int id)
     {
         var book = await _db.Books.FindAsync(id);
-        if (book == null) return NotFound();
+        if (book == null || !CanSee(book)) return NotFound();
         if (await HasPendingAsync(id)) return AlreadyPending(id);
         return View(book);
     }
@@ -66,7 +66,7 @@ public class BooksController : Controller
     public async Task<IActionResult> Submit(int id, IFormFile? file)
     {
         var book = await _db.Books.FindAsync(id);
-        if (book == null) return NotFound();
+        if (book == null || !CanSee(book)) return NotFound();
         if (await HasPendingAsync(id)) return AlreadyPending(id);
 
         string text;
@@ -90,6 +90,9 @@ public class BooksController : Controller
     }
 
     string? CurrentUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    // Hidden books are for admins only; everyone else gets "not found".
+    bool CanSee(Book book) => !book.Hidden || User.IsInRole("Admin");
 
     // Matches by user id; translations from before that was stored are matched by name.
     IQueryable<Translation> MyTranslations()

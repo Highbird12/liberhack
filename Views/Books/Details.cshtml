@@ -10,7 +10,14 @@
 @if (TempData["Msg"] is string msg) { <div class="alert alert-success">@msg</div> }
 <a asp-controller="Home" asp-action="Index">Back to library</a>
 <h1 class="mt-2">@Model.Title</h1>
-<p class="text-muted">@Model.Author, @Model.Nationality</p>
+<p class="text-muted">
+  @Model.Author, @Model.Nationality@(Model.Year is int y ? $", {y}" : "")
+  @if (!string.IsNullOrEmpty(Model.Language)) { <br /><span>Original language: @Model.Language</span> }
+</p>
+@if (Model.Hidden)
+{
+  <div class="alert alert-secondary" style="max-width:70ch">This book is hidden. Only admins can see it. Uncheck "Hidden" in Manage books to publish it.</div>
+}
 <p style="max-width:70ch">@Model.Summary</p>
 @if (minePending)
 {

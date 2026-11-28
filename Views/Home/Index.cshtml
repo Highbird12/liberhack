@@ -69,7 +69,7 @@ else if (found == 0)
                   @if (!string.IsNullOrEmpty(b.CoverUrl)) { <img class="cover" src="@b.CoverUrl" alt="@b.Title" /> }
                   else { <div class="cover">@b.Title</div> }
                   <div class="mt-1 fw-semibold">@b.Title</div>
-                  <small class="text-muted">@b.Author</small>
+                  <small class="text-muted">@b.Author@(b.Year is int y ? $", {y}" : "")</small>
                 </a>
               </div>
             }

@@ -13,15 +13,20 @@ else
 {
   <div class="table-responsive">
     <table class="table align-middle">
-      <tr><th style="width:56px"></th><th>Title</th><th>Author</th><th>Nationality</th><th>English PDF</th><th></th></tr>
+      <tr><th style="width:56px"></th><th>Title</th><th>Author</th><th>Year</th><th>Language</th><th>Nationality</th><th>English PDF</th><th></th></tr>
       @foreach (var b in Model)
       {
         <tr>
           <td>
             @if (!string.IsNullOrEmpty(b.CoverUrl)) { <img src="@b.CoverUrl" alt="" style="width:40px;height:56px;object-fit:cover;border-radius:4px" /> }
           </td>
-          <td><a asp-controller="Books" asp-action="Details" asp-route-id="@b.Id">@b.Title</a></td>
+          <td>
+            <a asp-controller="Books" asp-action="Details" asp-route-id="@b.Id">@b.Title</a>
+            @if (b.Hidden) { <span class="badge text-bg-secondary ms-1">Hidden</span> }
+          </td>
           <td>@b.Author</td>
+          <td>@b.Year</td>
+          <td>@b.Language</td>
           <td>@b.Nationality</td>
           <td>@(string.IsNullOrEmpty(b.EnglishPdf) ? "None" : "Yes")</td>
           <td class="text-end text-nowrap">
