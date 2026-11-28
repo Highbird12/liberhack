@@ -54,12 +54,13 @@ The repo has a `Dockerfile`, so Render (or any host that runs containers) can bu
 2. Add these environment variables in Render's dashboard (type the values there; never put them in the repo or in chat):
    - `ConnectionStrings__Default`: your Supabase **Session pooler** string (see Database above)
    - `Admin__Email` and `Admin__Password`: the admin account to create on the first start
+   - `Storage__Supabase__Url` and `Storage__Supabase__Key`: where admin uploads are kept (see Uploads below). Without them uploads are lost on every deploy.
 3. Deploy. Render sets the `PORT` variable and the app listens on it. Open the service's `onrender.com` address and log in as the admin.
 
 How it behaves on a host:
 - The app runs in Production mode, as a non-root user, behind Render's HTTPS proxy (the `X-Forwarded-*` headers are trusted).
 - Login cookies and form tokens use keys kept in the database (table `DataProtectionKeys`), so people stay logged in after a redeploy or a restart.
-- **Uploaded covers and PDFs are lost on every deploy.** A container's disk is wiped, and `wwwroot/uploads/` is on it. Add a Render persistent disk (a paid feature) or move uploads to Supabase Storage before relying on admin uploads. The seeded covers and PDFs are part of the image and are not affected.
+- Uploaded covers and PDFs are kept in Supabase Storage when it is configured (see Uploads below). If it is not, they go to the container's disk and are lost on every deploy. The seeded covers and PDFs are part of the image and are not affected.
 - On Render's free plan the service goes to sleep when nobody visits, so the first request afterwards can take about a minute.
 - Every push to the deployed branch redeploys automatically, and new migrations are applied when the app starts.
 
@@ -67,6 +68,23 @@ To try the image on your own PC (needs Docker):
 
     docker build -t booklibrary .
     docker run -p 10000:10000 -e PORT=10000 -e "ConnectionStrings__Default=..." -e Admin__Email=you@example.com -e "Admin__Password=..." booklibrary
+
+## Uploads (covers and PDFs)
+Admin uploads go to **Supabase Storage** when these two settings are present, and to the local `wwwroot/uploads/` folder when they are not (fine on your own PC).
+
+| Setting | Value |
+|---|---|
+| `Storage:Supabase:Url` | `https://PROJECTREF.supabase.co` (Supabase: **Project Settings > API**, the project URL) |
+| `Storage:Supabase:Key` | a **secret** key (`sb_secret_...`) from **Project Settings > API Keys**, or the legacy `service_role` key |
+| `Storage:Supabase:Bucket` | optional, default `uploads` |
+
+On your PC set them with `dotnet user-secrets set "Storage:Supabase:Url" "..."` (and the same for the key); on Render use `Storage__Supabase__Url` and `Storage__Supabase__Key`.
+
+- The secret key gives full access to the project and skips all access rules. Keep it on the server: only in user secrets and Render's environment, never in the repo, the browser or a chat.
+- On start the app creates the bucket as a **public** bucket if it does not exist, and logs `Uploads: Supabase Storage bucket "uploads" ...`. Public means anyone with a file's link can open it, which is what covers and the English PDFs need.
+- If the bucket already exists but is private, the app logs a warning: make it public in Supabase (Storage > the bucket > Edit bucket).
+- Files get random names. Replacing or removing a cover or PDF, or deleting a book, deletes its old file from the bucket. If storage refuses an upload (for example a file larger than the project allows), the admin sees a message and the book is not changed.
+- Books whose files were uploaded before this was set up point at `/uploads/...` files that may no longer exist; upload those covers again.
 
 ## Google login (optional)
 1. Google Cloud Console > APIs & Services > Credentials > Create OAuth client ID (Web application).
@@ -95,7 +113,7 @@ To try the image on your own PC (needs Docker):
 - **Manage books**: add, edit and delete books.
   - Fields: title, author, nationality (suggests existing ones), summary.
   - Optional cover image (.png, .jpg, .webp) and English PDF. SVG covers are not accepted because they can contain scripts.
-  - Uploads are saved in `wwwroot/uploads/` under random names. PDFs must start with the `%PDF` header. Replaced or deleted uploads are removed from disk. The seeded files in `wwwroot/covers` and `wwwroot/pdfs` are never deleted.
+  - Uploads are saved in Supabase Storage (or `wwwroot/uploads/` without it, see Uploads) under random names. PDFs must start with the `%PDF` header. Replaced or deleted uploads are removed from disk. The seeded files in `wwwroot/covers` and `wwwroot/pdfs` are never deleted.
   - Deleting a book also deletes its translations; the confirmation page says how many.
 
 ## Flow to try
@@ -111,6 +129,7 @@ To try the image on your own PC (needs Docker):
 - `Controllers/`: `HomeController` (library and search), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management)
 - `Models/`: `Book`, `Translation` and `TranslationStatus` (Pending, Approved, Rejected, Replaced), `BookForm` (admin add/edit form)
 - `Dockerfile`, `.dockerignore`: build and run the app in a container (Render)
+- `Services/FileStorage.cs`: where admin uploads are kept (Supabase Storage or the local folder)
 - `Data/`: `ApplicationDbContext`, `DatabaseConfig` (reads the connection string), `SeedData` (migrations, sample books, admin account), `Migrations/`
 - `Views/`: Razor pages for each controller
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
@@ -119,7 +138,7 @@ To try the image on your own PC (needs Docker):
 ## Notes
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).
 - Translation uploads must be .docx or a text-based PDF (scans cannot be read). A .docx with no readable body is treated as unreadable instead of crashing.
-- Files in `wwwroot/uploads/` stay on the machine that uploaded them; they are not in git and not in the database. A server needs somewhere permanent for them (a disk, or Supabase Storage).
+- Without Supabase Storage settings, uploads go to `wwwroot/uploads/` on the machine that uploaded them; they are not in git and not in the database.
 - **Row-level security is turned on automatically.** Supabase exposes tables in the `public` schema through its Data API, which anyone holding the project's public key can call. On every start the app turns on row-level security (with no policies, which blocks that access) for any table that does not have it yet, including tables added by future migrations, and logs the table names. The app itself is not affected because it connects as the table owner (Supabase's `postgres` user). Do not connect with a different, non-owner database user: row-level security would hide the tables from it. If the connected user may not change the tables, the app logs a warning and starts anyway; then run `ALTER TABLE public."TableName" ENABLE ROW LEVEL SECURITY;` yourself in the SQL Editor.
 - The database is updated with EF Core migrations (in `Data/Migrations`). The app applies any new ones when it starts, so there is no need to reset the database after a model change.
 
@@ -149,11 +168,11 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 9. **Row-level security on every table**, applied automatically at startup (see Notes), so Supabase's public API key cannot read or change the app's tables.
 10. **Container and hosting setup for Render**: `Dockerfile`, the app listens on the host's `PORT`, and trusts the host's HTTPS proxy headers (see Hosting on Render).
 11. **Login keys stored in the database** (`DataProtectionKeys`, migration `DataProtectionKeys`) so logins survive redeploys.
+12. **Uploads in Supabase Storage** (`Services/FileStorage.cs`): covers and PDFs survive redeploys; the bucket is created automatically; the local folder is still used when no storage is configured.
 
 ## Not done yet
 - Automated tests (everything so far was checked by hand in a browser).
 - More book details such as year, language or a hidden/published flag. Decide with the team first.
-- Permanent storage for uploads (a Render disk or Supabase Storage).
 - Email confirmation, password reset by email, and a page for admins to manage users.
 - Google login is untested.
 - The first commit in git history still contains the old hardcoded admin password. Change that password anywhere it was used.

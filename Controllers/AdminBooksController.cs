@@ -1,5 +1,6 @@
 using BookLibrary.Data;
 using BookLibrary.Models;
+using BookLibrary.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +15,12 @@ public class AdminBooksController : Controller
     static readonly string[] CoverExtensions = { ".png", ".jpg", ".jpeg", ".webp" };
 
     private readonly ApplicationDbContext _db;
-    private readonly IWebHostEnvironment _env;
+    private readonly IFileStorage _storage;
 
-    public AdminBooksController(ApplicationDbContext db, IWebHostEnvironment env)
+    public AdminBooksController(ApplicationDbContext db, IFileStorage storage)
     {
         _db = db;
-        _env = env;
+        _storage = storage;
     }
 
     public async Task<IActionResult> Index() =>
@@ -43,10 +44,18 @@ public class AdminBooksController : Controller
             return View("Form", form);
         }
 
+        var (cover, pdf, error) = await UploadAsync(form);
+        if (error != null)
+        {
+            ModelState.AddModelError("", error);
+            await LoadNationalitiesAsync();
+            return View("Form", form);
+        }
+
         var book = new Book();
         Apply(form, book);
-        if (form.Cover != null) book.CoverUrl = await SaveUploadAsync(form.Cover, "covers");
-        if (form.Pdf != null) book.EnglishPdf = await SaveUploadAsync(form.Pdf, "pdfs");
+        book.CoverUrl = cover;
+        book.EnglishPdf = pdf;
 
         _db.Books.Add(book);
         await _db.SaveChangesAsync();
@@ -88,20 +97,33 @@ public class AdminBooksController : Controller
             return View("Form", form);
         }
 
-        Apply(form, book);
+        // Upload new files first: if that fails, nothing about the book has changed yet.
+        var (cover, pdf, error) = await UploadAsync(form);
+        if (error != null)
+        {
+            ModelState.AddModelError("", error);
+            form.CurrentCoverUrl = book.CoverUrl;
+            form.CurrentPdf = book.EnglishPdf;
+            await LoadNationalitiesAsync();
+            return View("Form", form);
+        }
 
+        Apply(form, book);
+        var oldFiles = new List<string?>();
         if (form.Cover != null || form.RemoveCover)
         {
-            DeleteUpload(book.CoverUrl);
-            book.CoverUrl = form.Cover != null ? await SaveUploadAsync(form.Cover, "covers") : null;
+            oldFiles.Add(book.CoverUrl);
+            book.CoverUrl = cover;
         }
         if (form.Pdf != null || form.RemovePdf)
         {
-            DeleteUpload(book.EnglishPdf);
-            book.EnglishPdf = form.Pdf != null ? await SaveUploadAsync(form.Pdf, "pdfs") : null;
+            oldFiles.Add(book.EnglishPdf);
+            book.EnglishPdf = pdf;
         }
 
         await _db.SaveChangesAsync();
+        // Old files are removed only after the book points at the new ones.
+        foreach (var url in oldFiles) await _storage.DeleteAsync(url);
         TempData["Msg"] = $"Saved \"{book.Title}\".";
         return RedirectToAction(nameof(Index));
     }
@@ -124,8 +146,8 @@ public class AdminBooksController : Controller
         // Translations are removed with the book (cascade delete on BookId).
         _db.Books.Remove(book);
         await _db.SaveChangesAsync();
-        DeleteUpload(book.CoverUrl);
-        DeleteUpload(book.EnglishPdf);
+        await _storage.DeleteAsync(book.CoverUrl);
+        await _storage.DeleteAsync(book.EnglishPdf);
 
         TempData["Msg"] = $"Deleted \"{book.Title}\".";
         return RedirectToAction(nameof(Index));
@@ -165,26 +187,22 @@ public class AdminBooksController : Controller
         return s.Read(header, 0, 4) == 4 && header[0] == '%' && header[1] == 'P' && header[2] == 'D' && header[3] == 'F';
     }
 
-    // Uploads go to wwwroot/uploads/<folder>/ under a random name, so user file names
-    // never become paths and two uploads can't overwrite each other.
-    async Task<string> SaveUploadAsync(IFormFile file, string folder)
+    // Uploads the form's new cover and PDF, if any. If the second upload fails, the first is
+    // removed again so no orphan files are left behind.
+    async Task<(string? Cover, string? Pdf, string? Error)> UploadAsync(BookForm form)
     {
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var dir = Path.Combine(_env.WebRootPath, "uploads", folder);
-        Directory.CreateDirectory(dir);
-        var name = $"{Guid.NewGuid():N}{ext}";
-        await using (var fs = System.IO.File.Create(Path.Combine(dir, name)))
-            await file.CopyToAsync(fs);
-        return $"/uploads/{folder}/{name}";
-    }
-
-    // Only deletes files this controller uploaded; seeded files in /covers and /pdfs are left alone.
-    void DeleteUpload(string? url)
-    {
-        if (string.IsNullOrEmpty(url) || !url.StartsWith("/uploads/")) return;
-        var root = Path.GetFullPath(Path.Combine(_env.WebRootPath, "uploads")) + Path.DirectorySeparatorChar;
-        var path = Path.GetFullPath(Path.Combine(_env.WebRootPath, url.TrimStart('/')));
-        if (path.StartsWith(root) && System.IO.File.Exists(path)) System.IO.File.Delete(path);
+        string? cover = null, pdf = null;
+        try
+        {
+            if (form.Cover != null) cover = await _storage.SaveAsync(form.Cover, "covers");
+            if (form.Pdf != null) pdf = await _storage.SaveAsync(form.Pdf, "pdfs");
+            return (cover, pdf, null);
+        }
+        catch (FileStorageException ex)
+        {
+            await _storage.DeleteAsync(cover);
+            return (null, null, ex.Message);
+        }
     }
 
     async Task LoadNationalitiesAsync() =>
