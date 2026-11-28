@@ -34,6 +34,9 @@ public class HomeController : Controller
         return View(books.GroupBy(b => b.Nationality).OrderBy(g => g.Key).ToList());
     }
 
+    // The 3D bookshelf (wwwroot/js/shelf.js). Its book is built into the script, so no database access here.
+    public IActionResult Shelf() => View();
+
     public IActionResult Privacy() => View();
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

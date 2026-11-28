@@ -9,7 +9,7 @@ Live at https://book-library-jsmg.onrender.com (Render service `book-library`, a
 
 ## Stack and layout
 - ASP.NET Core MVC on .NET 10 (`net10.0`), ASP.NET Identity, EF Core with PostgreSQL (Npgsql) on Supabase.
-- `Controllers/`: `HomeController` (library, search), `BooksController` (book page, submit, My translations),
+- `Controllers/`: `HomeController` (library, search, the 3D bookshelf page `Shelf`), `BooksController` (book page, submit, My translations),
   `AdminController` (translation review), `AdminBooksController` (book management), `AdminUsersController` (users, admin role, blocking, reset links).
 - `Models/`: `Book` (with `Year`, `Language`, `Hidden`: hidden books are admin-only everywhere), `Translation`, `TranslationStatus` (Pending, Approved, Rejected, Replaced: only add new values at the end), `BookForm`.
 - `Data/`: `ApplicationDbContext`, `DatabaseConfig` (connection string parsing), `SeedData` (migrations, row-level security, admin, sample books), `Migrations/`.

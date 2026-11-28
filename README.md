@@ -119,6 +119,7 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 
 **Everyone**
 - Library home page: books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included.
+- **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button on the home page): a full-screen 3D shelf. The book turns to show its cover; clicking the cover opens a page about the book that grows out of it. It shows one book for now, The King in Yellow, which is built into `wwwroot/js/shelf.js` (the `BOOKS` list) and is not one of the library's database books. Adding a second book to that list turns on the arrows, scrolling and dragging.
 - Book page: author, year, original language, summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
 - Accounts: after 5 wrong passwords in a row an account is locked for 10 minutes. With email set up (see Email), new accounts confirm their email address and "Forgot your password?" emails a reset link; without it, an admin creates reset links.
 
@@ -151,6 +152,7 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 6. The translator follows their submissions on **My translations**: waiting, published, rejected (with the reason) or replaced. After a rejection they can send a new version.
 7. As admin, open **Manage books** and add a book with a cover and a PDF, edit it, then delete it. Tick **Hidden** and check that the book disappears from the library for visitors.
 8. As admin, open **Users**, make someone an admin, block and unblock a user, and create a password reset link.
+9. On the home page click **View the bookshelf**, move the mouse over the cover and click it, then press Close or Escape. Back to library returns to the home page.
 
 ## Project layout
 - `Controllers/`: `HomeController` (library and search), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management), `AdminUsersController` (users)
@@ -164,6 +166,7 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 - `Views/`: Razor pages for each controller
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
 - `test-files/`: a sample .docx translation
+- `Views/Home/Shelf.cshtml`, `wwwroot/css/shelf.css`, `wwwroot/js/shelf.js`, `wwwroot/shelf/`: the bookshelf page, its book image and its self-hosted fonts (Newsreader and Inter Tight, SIL Open Font License, licence texts next to the fonts)
 
 ## Notes
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).
@@ -213,6 +216,7 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 15. **Account safety**: lockout after 5 wrong passwords, quicker sign-out of blocked users, and an honest forgot-password page.
 16. **Automated tests** and a GitHub workflow that runs them on every pull request.
 17. **Email through Resend** (`Services/Email.cs`): email confirmation for new accounts, password reset emails, rate limiting on the email pages, and a "Confirm email" button for admins. Off until `Email:Resend:ApiKey` and `Email:From` are set.
+18. **Bookshelf page**: a 3D shelf with The King in Yellow, opened from the home page (see Features).
 
 ## Not done yet
 - A domain for email: until one is verified in Resend, emails only reach the Resend account's own address.
