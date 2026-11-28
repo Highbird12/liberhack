@@ -1,0 +1,34 @@
+# Builds the app and runs the tests on every pull request and on every push to main.
+# A red mark on a pull request means something broke: don't merge it until it's green.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      # A throwaway PostgreSQL for the tests (they create and delete their own databases in it).
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build (warnings count as errors)
+        run: dotnet build BookLibrary.csproj -warnaserror
+      - name: Test
+        run: dotnet test tests/BookLibrary.Tests

@@ -10,16 +10,19 @@ Live at https://book-library-jsmg.onrender.com (Render service `book-library`, a
 ## Stack and layout
 - ASP.NET Core MVC on .NET 10 (`net10.0`), ASP.NET Identity, EF Core with PostgreSQL (Npgsql) on Supabase.
 - `Controllers/`: `HomeController` (library, search), `BooksController` (book page, submit, My translations),
-  `AdminController` (translation review), `AdminBooksController` (book management).
-- `Models/`: `Book`, `Translation`, `TranslationStatus` (Pending, Approved, Rejected, Replaced: only add new values at the end), `BookForm`.
+  `AdminController` (translation review), `AdminBooksController` (book management), `AdminUsersController` (users, admin role, blocking, reset links).
+- `Models/`: `Book` (with `Year`, `Language`, `Hidden`: hidden books are admin-only everywhere), `Translation`, `TranslationStatus` (Pending, Approved, Rejected, Replaced: only add new values at the end), `BookForm`.
 - `Data/`: `ApplicationDbContext`, `DatabaseConfig` (connection string parsing), `SeedData` (migrations, row-level security, admin, sample books), `Migrations/`.
 - `Services/FileStorage.cs`: admin uploads, Supabase Storage or the local `wwwroot/uploads/` folder.
+- `Services/LockoutSignInManager.cs`: makes the login count wrong passwords (lockout after 5). `Areas/Identity/Pages/Account/ForgotPassword.cshtml` replaces the built-in page.
+- `tests/BookLibrary.Tests/`: xUnit tests; `AppFactory` starts the app on a throwaway database, `Browser` fills in forms with their anti-forgery token.
 - `Dockerfile`: the image Render builds.
 
 ## Run and check
 - Build: `dotnet build` (keep it at 0 warnings).
 - Run: `dotnet run`, then open https://localhost:7080 by hand. Needs the .NET 10 runtime (a newer major version alone will not run it).
-- There are no automated tests yet. Check changes by running the app and using the affected pages, as an admin and as a normal user.
+- Tests: `dotnet test tests/BookLibrary.Tests`. They need PostgreSQL on localhost:5432 (user and password `postgres`) or `TEST_DATABASE` set to a server connection string. GitHub runs them on every pull request (`.github/workflows/tests.yml`).
+- Add or update tests with every change, and keep them all passing. Also try the affected pages by hand when the change is visual.
 - Settings come from user secrets locally and environment variables on Render (double underscores there):
   `ConnectionStrings:Default`, `Admin:Email`, `Admin:Password`, `Storage:Supabase:Url`, `Storage:Supabase:Key`, optional `Storage:Supabase:Bucket`.
 
