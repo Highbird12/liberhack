@@ -1,5 +1,8 @@
 // Mobile menu of the shared header (Views/Shared/_VibeHeader.cshtml), on the landing page and the dark library.
 (() => {
+  // Log in / register pages: the provider buttons Identity renders just say "Google"; say what they do.
+  document.querySelectorAll('button[name="provider"]').forEach(b => { b.textContent = 'Continue with ' + b.value; });
+
   const burger = document.querySelector('.vh-burger');
   const menu = document.getElementById('vh-menu');
   const overlay = document.querySelector('.vh-overlay');

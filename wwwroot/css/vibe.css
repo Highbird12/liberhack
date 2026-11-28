@@ -176,3 +176,72 @@ body.vibe .literary-map-section .form-label { color: #d0d0d0; }
 @media (prefers-reduced-motion: reduce) {
   body.vibe .btn, body.vibe .cover { transition: none; }
 }
+
+/* ---------- Log in, register and password pages (body.vibe.auth): dark glass cards over the video ---------- */
+/* The video fills the window behind the page and stays put when the page scrolls. */
+body.auth .bg { position: fixed; inset: 0; z-index: -1; }
+body.auth .vibe-top { position: relative; z-index: 2; }
+body.auth main.container { max-width: 520px; padding-top: 0; }
+body.auth main h1 { text-align: center; font-size: clamp(34px, 5vw, 52px); margin-bottom: 24px; }
+
+/* Login and Register put the form and the "other services" box side by side; stack and centre them instead. */
+body.auth main .row { display: flex; flex-direction: column; align-items: center; gap: 16px; margin: 0; --bs-gutter-x: 0; }
+body.auth main .row > [class*="col-"] { flex: none; width: 100%; max-width: 440px; margin: 0; padding: 0; }
+
+/* The cards: every section (Log in), the form of two-column pages (Register, Reset password) and the plain content
+   box of our own Forgot password page */
+body.auth main section,
+body.auth main .row > [class*="col-"] > form,
+body.auth main > div:not(.row):not(.alert) {
+  background: rgba(10, 10, 12, 0.74);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  padding: 28px;
+}
+body.auth main > div:not(.row):not(.alert) { max-width: 480px !important; margin: 0 auto; }
+body.auth main section hr { border-color: var(--line-strong); opacity: 1; margin: 12px 0 20px; }
+body.auth main section h2, body.auth main section h3 {
+  margin: 0;
+  font: 500 15px / 1.4 var(--font-sans);
+  letter-spacing: 0;
+  color: #d0d0d0;
+}
+body.auth main p { color: #d0d0d0; }
+body.auth main section p { margin-bottom: 10px; }
+
+/* Floating-label inputs (Identity's markup) keep room for the label, so a rounded box rather than a full pill */
+body.auth .form-floating > .form-control {
+  height: 58px;
+  padding: 1.6rem 1.1rem 0.5rem;
+  border-radius: 16px;
+}
+/* Identity's inputs use placeholders only to position the floating label; keep them invisible (vibe.css greys other placeholders) */
+body.auth .form-floating > .form-control::placeholder { color: transparent; }
+body.auth .form-floating > label { color: var(--muted); padding-left: 1.1rem; }
+body.auth .form-floating > .form-control:focus ~ label,
+body.auth .form-floating > .form-control:not(:placeholder-shown) ~ label { color: var(--muted); }
+body.auth .form-check-input { background-color: var(--surface-2); border-color: var(--line-strong); }
+body.auth .form-check-input:checked { background-color: #fff; border-color: #fff; }
+body.auth .checkbox label { color: #d0d0d0; }
+body.auth .btn-lg { padding: 12px 24px; font-size: 15px; margin-bottom: 18px; }
+body.auth .alert { border-radius: 16px; }
+
+/* Google (or any other provider) button: white pill with the Google "G" */
+body.auth button[name="provider"] {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; height: 50px; margin: 0;
+}
+body.auth button[name="provider"][value="Google"]::before {
+  content: "";
+  width: 18px; height: 18px; flex: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z'/%3E%3Cpath fill='%23FBBC05' d='M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.3-8.1 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* With no Google keys the built-in page says "There are no external authentication services configured";
+   visitors do not need to read that, so the whole box is hidden unless it holds a provider button. */
+body.auth main section:has(> h3):not(:has(button[name="provider"])) { display: none; }
+
+@media (max-width: 575px) {
+  body.auth main section { padding: 22px 18px; }
+}

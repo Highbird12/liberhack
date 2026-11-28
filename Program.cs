@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using BookLibrary.Data;
 using BookLibrary.Services;
 using Microsoft.AspNetCore.DataProtection;
@@ -73,7 +74,13 @@ var auth = builder.Services.AddAuthentication();
 var gid = builder.Configuration["Google:ClientId"];
 var gsecret = builder.Configuration["Google:ClientSecret"];
 if (!string.IsNullOrEmpty(gid) && !string.IsNullOrEmpty(gsecret))
-    auth.AddGoogle(o => { o.ClientId = gid; o.ClientSecret = gsecret; });
+    auth.AddGoogle(o =>
+    {
+        o.ClientId = gid;
+        o.ClientSecret = gsecret;
+        // Google says whether it has verified the address; the external login page only creates accounts when it has.
+        o.ClaimActions.MapJsonKey("email_verified", "email_verified");
+    });
 
 builder.Services.AddControllersWithViews();
 

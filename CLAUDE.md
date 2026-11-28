@@ -17,6 +17,7 @@ Live at https://book-library-jsmg.onrender.com (Render service `book-library`, a
 - `Services/LockoutSignInManager.cs`: makes the login count wrong passwords (lockout after 5). `Areas/Identity/Pages/Account/ForgotPassword.cshtml` replaces the built-in page.
 - `tests/BookLibrary.Tests/`: xUnit tests; `AppFactory` starts the app on a throwaway database, `Browser` fills in forms with their anti-forgery token.
 - `Dockerfile`: the image Render builds.
+- Log in / Register / password pages: ASP.NET Identity's built-in pages, put on the site layout by `Areas/Identity/Pages/Account/_ViewStart.cshtml`; `_Layout.cshtml` recognises them by route and gives them the dark look and video, and loads Identity's own jQuery (its validation partial expects the layout to). `Areas/Identity/Pages/Account/ExternalLogin.cshtml(.cs)` replaces the built-in Google page: new Google users are created already confirmed (Google verified the email), and Google is never linked automatically to an existing account.
 - Landing page and dark look: `Views/Home/Index.cshtml` + `wwwroot/landing/`, shared header `Views/Shared/_VibeHeader.cshtml`; a page using the site layout turns on the dark look with `ViewData["Vibe"] = true` (`wwwroot/css/vibe.css`, scoped to `body.vibe`).
 
 ## Run and check
@@ -27,6 +28,7 @@ Live at https://book-library-jsmg.onrender.com (Render service `book-library`, a
 - Settings come from user secrets locally and environment variables on Render (double underscores there):
   `ConnectionStrings:Default`, `Admin:Email`, `Admin:Password`, `Storage:Supabase:Url`, `Storage:Supabase:Key`, optional `Storage:Supabase:Bucket`,
   `Email:Resend:ApiKey`, `Email:From`, optional `Email:RequestsPer15Minutes`.
+  optional `Google:ClientId`, `Google:ClientSecret` (turn on "Continue with Google"; read once at start, so changing them needs a restart).
 - Email (`Services/Email.cs`) goes through Resend's web API, never SMTP (Render's free plan blocks SMTP ports). With the email settings present, new accounts must confirm their email and "Forgot password" sends a link; without them nothing is sent. Settings that change behaviour are read lazily (options, per request) so the tests can switch them with `UseSetting`.
 
 ## Rules

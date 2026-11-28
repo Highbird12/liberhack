@@ -109,13 +109,25 @@ With both settings present:
 Without the settings nothing is sent: accounts work without confirmation and "Forgot your password?" tells people to ask an admin, who can create a reset link on the Users page.
 
 ## Google login (optional)
-1. Google Cloud Console > APIs & Services > Credentials > Create OAuth client ID (Web application).
-2. Authorized redirect URI: `https://localhost:7080/signin-google`
-3. Then:
-       dotnet user-secrets set "Google:ClientId" "YOUR_ID"
-       dotnet user-secrets set "Google:ClientSecret" "YOUR_SECRET"
-4. Restart. A "Google" button appears on the Log in and Register pages. Without keys it stays hidden.
-(Not tested yet.)
+A **Continue with Google** button appears on the Log in and Register pages once the two keys below are set. Without them nothing shows and nothing changes.
+
+Set up (you do this yourself in Google's and Render's dashboards; keys never go in the repo or in chat):
+1. Google Cloud Console > **APIs & Services > OAuth consent screen**: create the app (user type External), give it a name and your email. While it says "Testing", only the test users you list can sign in; press **Publish app** to open it to everyone.
+2. **Credentials > Create credentials > OAuth client ID > Web application**.
+3. **Authorized redirect URIs**, one per place the site runs:
+   - `https://localhost:7080/signin-google` (your PC)
+   - `https://book-library-jsmg.onrender.com/signin-google` (the live site; add your own domain too if you get one)
+4. Give the site the Client ID and Client secret:
+   - on your PC: `dotnet user-secrets set "Google:ClientId" "YOUR_ID"` and `dotnet user-secrets set "Google:ClientSecret" "YOUR_SECRET"`
+   - on Render: environment variables `Google__ClientId` and `Google__ClientSecret` (two underscores), then deploy.
+5. Restart. Try it by hand once: **Continue with Google** > choose an account > you land on the library signed in.
+
+How it behaves (`Areas/Identity/Pages/Account/ExternalLogin.cshtml.cs`, which replaces the built-in page):
+- A first-time Google account whose email Google reports as verified gets a new account, **already confirmed**, and is signed in. No confirmation email is needed, so it works even though email confirmation is on and email sending is limited until a domain is verified in Resend.
+- A Google account that signed in before goes straight in. Blocked users stay blocked.
+- If an account with that email already exists (for example registered with a password), Google is **not** linked automatically, because that would let someone who registered your address with their own password keep access after you sign in with Google. The visitor is told to log in with the password; once logged in they can connect Google under **Manage your account > External logins**.
+- Google must report the email as verified, otherwise no account is created.
+- The automated tests cover our side (the button, the redirect to Google, and every case above, using a stand-in for Google's reply). They cannot talk to the real Google, so the first real sign-in needs trying by hand.
 
 ## Features
 
@@ -124,6 +136,8 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 - **Library** (`/Library`): books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included. It uses the dark look of the landing page; other pages keep the normal look.
 - **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button in the library and Bookshelf in the header): a full-screen 3D shelf in the landing page's look (black, the same video and header). The book turns to show its cover; clicking the cover opens a page about the book that grows out of it. It shows one book for now, The King in Yellow, which is built into `wwwroot/js/shelf.js` (the `BOOKS` list) and is not one of the library's database books. Adding a second book to that list turns on the arrows, scrolling and dragging.
 - Book page: author, year, original language, summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
+- **Log in, Register and the password pages** share the landing page's look: the background video, the shared header and dark glass cards. The account settings pages (Manage your account) use the normal site look.
+- **Continue with Google** on the Log in and Register pages, when set up (see Google login).
 - Accounts: after 5 wrong passwords in a row an account is locked for 10 minutes. With email set up (see Email), new accounts confirm their email address and "Forgot your password?" emails a reset link; without it, an admin creates reset links.
 
 **Logged-in users**
@@ -169,6 +183,7 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 - `Views/`: Razor pages for each controller
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
 - `test-files/`: a sample .docx translation
+- `Areas/Identity/Pages/Account/_ViewStart.cshtml`: puts the Log in, Register and password pages on the site layout; `Views/Shared/_Layout.cshtml` gives those pages the dark look and video (recognised by route) and loads Identity's own jQuery so its form validation works. `ExternalLogin.cshtml(.cs)`: the Google sign-in page.
 - `Views/Home/Index.cshtml`, `wwwroot/landing/`: the landing page (styles, menu script, logo, Geist Pixel Circle font with its licence). `Views/Shared/_VibeHeader.cshtml`: its header, also used by the library. `wwwroot/css/vibe.css`: the dark look of the library (a page turns it on with `ViewData["Vibe"] = true`). The headline font BubbledotICG-FinePos and Inter load from OnlineWebFonts and Google Fonts; the background video loads from CloudFront.
 - `Views/Home/Shelf.cshtml`, `wwwroot/css/shelf.css`, `wwwroot/js/shelf.js`, `wwwroot/shelf/`: the bookshelf page and its book image. It uses the landing page's look (black, the same background video, the shared header and fonts from `wwwroot/landing/`)
 
@@ -221,6 +236,8 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 16. **Automated tests** and a GitHub workflow that runs them on every pull request.
 17. **Email through Resend** (`Services/Email.cs`): email confirmation for new accounts, password reset emails, rate limiting on the email pages, and a "Confirm email" button for admins. Off until `Email:Resend:ApiKey` and `Email:From` are set.
 18. **Bookshelf page**: a 3D shelf with The King in Yellow, opened from the home page (see Features).
+19. **Landing page**, the dark library, and the same look on the Log in and Register pages.
+20. **Continue with Google** (see Google login): accounts are created already confirmed, and never linked automatically to an existing account.
 
 ## Not done yet
 - A domain for email: until one is verified in Resend, emails only reach the Resend account's own address.
