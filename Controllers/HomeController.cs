@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Diagnostics;
 using BookLibrary.Data;
 using BookLibrary.Models;
@@ -40,8 +41,24 @@ public class HomeController : Controller
         return View(books.GroupBy(b => b.Nationality).OrderBy(g => g.Key).ToList());
     }
 
-    // The 3D bookshelf (wwwroot/js/shelf.js). Its book is built into the script, so no database access here.
-    public IActionResult Shelf() => View();
+    // The 3D bookshelf (wwwroot/js/shelf.js). Every visible book that has a cover stands on it automatically, next to
+    // the books built into the script; the script makes each one's spine from its cover. Oldest first.
+    public async Task<IActionResult> Shelf()
+    {
+        var books = await _db.Books
+            .Where(b => !b.Hidden && b.CoverUrl != null && b.CoverUrl != "")
+            .OrderBy(b => b.Year == null).ThenBy(b => b.Year).ThenBy(b => b.Title)
+            .Select(b => new { b.Id, b.Title, b.Author, b.Year, b.Nationality, b.Language, b.Summary, Cover = b.CoverUrl })
+            .ToListAsync();
+
+        // Written into a <script type="application/json"> tag. The default encoder escapes < > & as \u003C and so on,
+        // so a title such as "</script>" cannot end the tag early.
+        ViewData["ShelfBooks"] = JsonSerializer.Serialize(
+            books.Select(b => new { b.Id, b.Title, b.Author, b.Year, b.Nationality, b.Language, b.Summary, b.Cover,
+                                    Url = Url.Action("Details", "Books", new { id = b.Id }) }),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        return View();
+    }
 
     public IActionResult Privacy() => View();
 

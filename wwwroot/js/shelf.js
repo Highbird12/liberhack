@@ -1,14 +1,37 @@
 // Bookshelf page (Views/Home/Shelf.cshtml): books stand spine out on a 3D shelf; the active one turns to show its cover,
 // and clicking the cover opens a detail sheet that grows out of it. One requestAnimationFrame loop plus the Web Animations API.
 (() => {
-  // Each image is a photo of the whole book (back, spine, front). Spine and cover are boxes cut out of it: x, y, w, h in image pixels.
-  const BOOKS = [
+  // Books built into the shelf. Their image is a photo of the whole book (back, spine, front); spine and cover are
+  // boxes cut out of it: x, y, w, h in image pixels.
+  const BUILT_IN = [
     {
-      title: 'The King in Yellow', author: 'R. W. Chambers', year: 1895, genre: 'Horror',
+      kind: 'sheet', title: 'The King in Yellow', author: 'R. W. Chambers', year: 1895, meta: '1895 / Horror',
       synopsis: 'A forbidden play passes from reader to reader, and anyone who reads it begins to lose their grip on the world they know.',
       image: '/shelf/king-in-yellow.png', size: [535, 400], spine: [230, 0, 68, 400], cover: [304, 0, 230, 400],
     },
   ];
+
+  // The library's visible books with a cover (written into the page by HomeController.Shelf). They only have a front
+  // cover image, so their spine is made here: a colour taken from the cover's left edge, the title and the author.
+  let library = [];
+  try { library = JSON.parse(document.getElementById('shelf-books')?.textContent || '[]'); } catch { library = []; }
+  const fromLibrary = library.filter(b => b && b.cover).map(b => ({
+    kind: 'cover', id: b.id, title: b.title || '', author: b.author || '', year: b.year ?? null,
+    meta: [b.year, b.language || b.nationality].filter(Boolean).join(' / '),
+    synopsis: b.summary || '', image: b.cover, url: b.url,
+  }));
+
+  // Oldest first; books without a year at the end
+  const BOOKS = [...BUILT_IN, ...fromLibrary].sort((a, b) =>
+    (a.year ?? 1e9) - (b.year ?? 1e9) || a.title.localeCompare(b.title));
+  BOOKS.forEach((b, i) => {
+    b.index = i;
+    // width / height of the front cover; the real value is read when the image loads
+    b.aspect = b.kind === 'sheet' ? b.cover[2] / b.cover[3] : 0.7;
+    b.spineColour = '#2a2a2e';
+    b.spineInk = '#f4f2ed';
+  });
+  const START = Math.max(0, BOOKS.findIndex(b => b.kind === 'sheet'));   // open on the built-in book
 
   const N = BOOKS.length;
   const multi = N > 1;                      // with one book there is nothing to scroll through
@@ -21,7 +44,79 @@
   const smooth = x => x * x * (3 - 2 * x);
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
-  BOOKS.forEach(b => { const i = new Image(); i.src = b.image; });
+  // Load each cover once: learn its proportions and, for library books, the spine colour.
+  function study(book) {
+    const img = new Image();
+    if (new URL(book.image, location.href).origin !== location.origin) img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const box = book.kind === 'sheet' ? book.cover : [0, 0, img.naturalWidth, img.naturalHeight];
+      if (box[2] > 0 && box[3] > 0) book.aspect = clamp(box[2] / box[3], 0.45, 0.9);
+      if (book.kind === 'cover') {
+        try {
+          const c = document.createElement('canvas'); c.width = 40; c.height = 60;
+          const g = c.getContext('2d', { willReadFrequently: true });
+          g.drawImage(img, 0, 0, 40, 60);
+          const px = g.getImageData(0, 0, 5, 60).data;    // the strip along the left edge, next to where a spine would be
+          let r = 0, gr = 0, bl = 0, n = 0;
+          for (let k = 0; k < px.length; k += 4) { if (px[k + 3] < 16) continue; r += px[k]; gr += px[k + 1]; bl += px[k + 2]; n++; }
+          if (n) {
+            [r, gr, bl] = [r / n, gr / n, bl / n].map(v => Math.round(v * 0.82));   // a little darker, like a spine in shade
+            book.spineColour = `rgb(${r}, ${gr}, ${bl})`;
+            book.spineInk = (0.2126 * r + 0.7152 * gr + 0.0722 * bl) / 255 > 0.55 ? '#141414' : '#f4f2ed';
+          }
+        } catch { /* a cover from another site without CORS headers: keep the default spine colour */ }
+      }
+      applyBook(book);
+    };
+    img.onerror = () => applyBook(book);
+    img.src = book.image;
+  }
+
+  // Cover and spine of one face. Built-in books cut both out of one photo; library books use the cover image as it is.
+  function dress(t, book) {
+    if (book.kind === 'sheet') {
+      crop(t.sp, book, book.spine);
+      crop(t.cv, book, book.cover);
+      return;
+    }
+    t.cv.style.backgroundImage = `url(${JSON.stringify(book.image)})`;
+    t.cv.classList.add('photo');
+    t.sp.classList.add('gen');
+    const title = document.createElement('span'), author = document.createElement('span'), mark = document.createElement('span');
+    title.className = 'sp-title'; title.textContent = book.title;
+    author.className = 'sp-author'; author.textContent = book.author;
+    mark.className = 'sp-mark';
+    t.sp.append(title, author, mark);
+  }
+
+  // Spine text: start at full size and shrink until the title (and author) fit the spine's length; only very long
+  // titles still end in "...". Sizes are relative to the spine width, so this runs again after a resize.
+  function fitSpines() {
+    for (const book of BOOKS) {
+      if (book.kind !== 'cover') continue;
+      const copies = tapes.filter(t => t.i === book.index);
+      for (const [cls, base] of [['.sp-title', 0.25], ['.sp-author', 0.17]]) {
+        const el = copies[0].sp.querySelector(cls);
+        let fit = base;
+        el.style.setProperty('--fit', fit);
+        while (el.scrollHeight > el.clientHeight && fit > base * 0.6) {   // even 1px over shows "..."
+          fit -= 0.01;
+          el.style.setProperty('--fit', fit.toFixed(3));
+        }
+        for (const t of copies) t.sp.querySelector(cls).style.setProperty('--fit', fit.toFixed(3));
+      }
+    }
+  }
+
+  // Width of a book's cover face (it is also the depth of the box), from the cover's proportions
+  const widthOf = book => H * book.aspect;
+  function applyBook(book) {
+    for (const t of tapes) if (t.i === book.index) {
+      t.el.style.setProperty('--d', widthOf(book) + 'px');
+      t.sp.style.setProperty('--spine', book.spineColour);
+      t.sp.style.setProperty('--spine-ink', book.spineInk);
+    }
+  }
 
   // Stretch one box of the image over a face. A box as tall (or wide) as the image has no slack, so avoid 0/0.
   function crop(el, book, box) {
@@ -39,7 +134,6 @@
     el.className = 'tape';
     const sp = document.createElement('div'), cv = document.createElement('div');
     sp.className = 'face sp'; cv.className = 'face cv';
-    crop(sp, BOOKS[i], BOOKS[i].spine); crop(cv, BOOKS[i], BOOKS[i].cover);
     el.append(sp, cv); stage.append(el);
     el.addEventListener('pointerenter', () => { hover = v; });
     el.addEventListener('pointerleave', () => { if (hover === v) hover = -1; });
@@ -48,10 +142,12 @@
       const r = rel(v, s);
       if (Math.abs(r) < .5) openDetail(); else T = Math.round(T + r);
     });
-    tapes.push({ v, i, el, sp, cv, lift: 0 });
+    const t = { v, i, el, sp, cv, lift: 0 };
+    dress(t, BOOKS[i]);
+    tapes.push(t);
   }
 
-  let s = multi ? N : 0, T = s, active = -1;
+  let s = multi ? N + START : 0, T = s, active = -1;
   let mx = innerWidth / 2, my = innerHeight / 2;
   let tiltX = 0, tiltY = 0, onCover = false;
   let H = 0, ws = 0, d = 0, gap = 0, W = innerWidth, VH = innerHeight;
@@ -59,13 +155,14 @@
 
   function measure() {
     H = $('.probe').getBoundingClientRect().height;
-    ws = H * 142 / 840; d = H * 474 / 900; gap = H * .03;
+    ws = H * 142 / 840; gap = H * .03;
     W = innerWidth; VH = innerHeight;
     stage.style.setProperty('--ws', ws + 'px');
-    stage.style.setProperty('--d', d + 'px');
+    BOOKS.forEach(applyBook);
   }
   const rel = (v, at) => { let r = mod(v - at, LOOP); if (r > LOOP / 2) r -= LOOP; return r; };
   const B = r => Math.abs(r) < 1 ? (r + Math.sin(Math.PI * r) / Math.PI) / 2 : Math.sign(r) * .5;
+  // d: width of the open cover, which pushes its neighbours apart (blended between two books while the shelf moves)
   const F = r => r * (ws + gap) + (d - ws + 1.6 * gap) * B(r);
 
   // Caption: each line slides through its own mask when the book changes
@@ -91,7 +188,7 @@
     const b = BOOKS[i];
     swap(capTitle, 'c-title', b.title, dir, instant);
     swap(capSub, 'c-sub', b.author, dir, instant);
-    swap(capYear, 'c-year', String(b.year), dir, instant);
+    swap(capYear, 'c-year', b.year ? String(b.year) : '', dir, instant);
   }
 
   // Navigation, only when there is more than one book
@@ -137,12 +234,13 @@
   addEventListener('pointercancel', () => { if (drag) { T = Math.round(T); drag = null; dragging = false; } });
 
   // Detail sheet: grows out of the cover, text rises, the cover bleeds in through an ink mask
-  const detail = $('.detail'), pimg = $('.pimg', detail), blobs = [...detail.querySelectorAll('circle')];
+  const detail = $('.detail'), pimg = $('.pimg', detail), poster = $('svg.poster', detail), blobs = [...detail.querySelectorAll('circle')];
   let inkRaf = 0;
   function coverInset() {
-    const r = tapes[mod(Math.round(T), LOOP)].cv.getBoundingClientRect();
+    const tape = tapes[mod(Math.round(T), LOOP)];
+    const r = tape.cv.getBoundingClientRect();
     const p = 2200 / (2200 - .2 * H);       // the open cover is pulled 0.2 H towards the viewer
-    const w = Math.min(r.width, d * p), h = Math.min(r.height, H * p);
+    const w = Math.min(r.width, widthOf(BOOKS[tape.i]) * p), h = Math.min(r.height, H * p);
     const ccx = r.left + r.width / 2, ccy = r.top + r.height / 2;
     return { ccx, ccy, inset: `inset(${ccy - h / 2}px ${W - ccx - w / 2}px ${VH - ccy - h / 2}px ${ccx - w / 2}px round 3px)` };
   }
@@ -152,13 +250,29 @@
     const b = BOOKS[mod(T, N)];
     $('.d-sub', detail).textContent = b.author;
     $('.d-title', detail).textContent = b.title;
-    $('.d-meta', detail).textContent = `${b.year} / ${b.genre}`;
+    $('.d-meta', detail).textContent = b.meta;
     $('.d-syn', detail).textContent = b.synopsis;
-    $('.d-credit', detail).textContent = `Written by ${b.author}.`;
-    const [SW, SH] = b.size, [x, y, w, h] = b.cover;
+    $('.d-credit', detail).textContent = b.author ? `Written by ${b.author}.` : '';
+    const cta = $('.cta', detail);
+    cta.textContent = b.url ? 'Open the book' : 'Browse the library';
+    cta.href = b.url || '/Library';
+    // The poster takes the cover's proportions: 474 wide, as tall as the cover needs
+    const PW = 474, PH = Math.round(PW / b.aspect);
+    poster.setAttribute('viewBox', `0 0 ${PW} ${PH}`);
+    poster.parentNode.style.aspectRatio = `${PW} / ${PH}`;
+    $('#pclip rect', poster).setAttribute('height', PH);
+    $('#inkm', poster).setAttribute('height', PH + 400);
     pimg.setAttribute('href', b.image);
-    pimg.setAttribute('x', -x * 474 / w); pimg.setAttribute('y', -y * 900 / h);
-    pimg.setAttribute('width', SW * 474 / w); pimg.setAttribute('height', SH * 900 / h);
+    if (b.kind === 'sheet') {
+      const [SW, SH] = b.size, [x, y, w, h] = b.cover;
+      pimg.setAttribute('preserveAspectRatio', 'none');
+      pimg.setAttribute('x', -x * PW / w); pimg.setAttribute('y', -y * PH / h);
+      pimg.setAttribute('width', SW * PW / w); pimg.setAttribute('height', SH * PH / h);
+    } else {
+      pimg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      pimg.setAttribute('x', 0); pimg.setAttribute('y', 0);
+      pimg.setAttribute('width', PW); pimg.setAttribute('height', PH);
+    }
     blobs.forEach(c => c.setAttribute('r', 0));
     const { ccx, ccy, inset } = coverInset();
     detail.getAnimations({ subtree: true }).forEach(a => a.cancel());
@@ -220,6 +334,10 @@
     if (a !== active) setActive(a, Math.sign(T - s) || 1);
 
     const shelfY = VH / 2;
+    // The open book's cover width; while moving, blend between the two books either side of the centre
+    const i0 = Math.floor(s), f = s - i0;
+    const d0 = widthOf(BOOKS[mod(i0, N)]), d1 = widthOf(BOOKS[mod(i0 + 1, N)]);
+    d = d0 + (d1 - d0) * smooth(f);
 
     onCover = !isOpen && Math.abs(mx - W / 2) < .55 * d && Math.abs(my - shelfY) < .55 * H && Math.abs(T - s) < .3;
     let tY, tX;
@@ -229,7 +347,7 @@
     tiltY += (tY - tiltY) * kt; tiltX += (tX - tiltX) * kt;
 
     const kl = reduced ? 1 : 1 - Math.exp(-12 * dt);
-    const lim = W / 2 + 1.5 * d;
+    const lim = W / 2 + 1.5 * H * 0.9;   // 0.9: the widest cover allowed
     for (const t of tapes) {
       const r = rel(t.v, s);
       const target = hover === t.v && Math.abs(r) > .5 && !isOpen ? 1 : 0;
@@ -254,8 +372,11 @@
     requestAnimationFrame(frame);
   }
 
-  addEventListener('resize', measure);
+  addEventListener('resize', () => { measure(); fitSpines(); });
   measure();
+  fitSpines();
+  if (document.fonts) document.fonts.ready.then(fitSpines);   // again once Inter has loaded (different widths)
+  BOOKS.forEach(study);
   setActive(mod(Math.round(s), N), 1, true);
   requestAnimationFrame(frame);
 })();

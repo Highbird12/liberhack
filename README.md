@@ -134,7 +134,9 @@ How it behaves (`Areas/Identity/Pages/Account/ExternalLogin.cshtml.cs`, which re
 **Everyone**
 - **Landing page** (`/`): a full-screen page over a looping background video, with the headline, a short description and a **Browse the library** button. Its header (logo, Home, Library, Bookshelf, My translations when signed in, Sign in / Log out, and a menu button on phones) is shared with the library. Old search links such as `/?q=tolstoy` are sent on to `/Library`.
 - **Library** (`/Library`): books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included. It uses the dark look of the landing page; other pages keep the normal look.
-- **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button in the library and Bookshelf in the header): a full-screen 3D shelf in the landing page's look (black, the same video and header). The book turns to show its cover; clicking the cover opens a page about the book that grows out of it. It shows one book for now, The King in Yellow, which is built into `wwwroot/js/shelf.js` (the `BOOKS` list) and is not one of the library's database books. Adding a second book to that list turns on the arrows, scrolling and dragging.
+- **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button in the library and Bookshelf in the header): a full-screen 3D shelf in the landing page's look (black, the same video and header). The active book turns to show its cover; clicking the cover opens a page about the book that grows out of it, with an **Open the book** button to its page in the library. Arrows, the mouse wheel, dragging and the arrow keys move along the shelf.
+  - **Every visible book with a cover is on the shelf automatically**, oldest first. When an admin adds a book with a cover in Manage books it appears there straight away; hiding a book or removing its cover takes it off. Nothing extra to upload: the cover face uses the cover image at its own proportions, and the spine is made in the browser from the cover (the colour of the cover's left edge, the title and author running down it, white or dark text to suit the colour, and the logo). Long titles shrink to fit.
+  - The King in Yellow is built into `wwwroot/js/shelf.js` (the `BUILT_IN` list) with its real photographed spine; it is not a library book. Remove it there if you no longer want it.
 - Book page: author, year, original language, summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
 - **Log in, Register and the password pages** share the landing page's look: the background video, the shared header and dark glass cards. The account settings pages (Manage your account) use the normal site look.
 - **Continue with Google** on the Log in and Register pages, when set up (see Google login).
@@ -185,7 +187,7 @@ How it behaves (`Areas/Identity/Pages/Account/ExternalLogin.cshtml.cs`, which re
 - `test-files/`: a sample .docx translation
 - `Areas/Identity/Pages/Account/_ViewStart.cshtml`: puts the Log in, Register and password pages on the site layout; `Views/Shared/_Layout.cshtml` gives those pages the dark look and video (recognised by route) and loads Identity's own jQuery so its form validation works. `ExternalLogin.cshtml(.cs)`: the Google sign-in page.
 - `Views/Home/Index.cshtml`, `wwwroot/landing/`: the landing page (styles, menu script, logo, Geist Pixel Circle font with its licence). `Views/Shared/_VibeHeader.cshtml`: its header, also used by the library. `wwwroot/css/vibe.css`: the dark look of the library (a page turns it on with `ViewData["Vibe"] = true`). The headline font BubbledotICG-FinePos and Inter load from OnlineWebFonts and Google Fonts; the background video loads from CloudFront.
-- `Views/Home/Shelf.cshtml`, `wwwroot/css/shelf.css`, `wwwroot/js/shelf.js`, `wwwroot/shelf/`: the bookshelf page and its book image. It uses the landing page's look (black, the same background video, the shared header and fonts from `wwwroot/landing/`)
+- `Views/Home/Shelf.cshtml`, `wwwroot/css/shelf.css`, `wwwroot/js/shelf.js`, `wwwroot/shelf/`: the bookshelf. `HomeController.Shelf` writes the visible books with a cover into the page as JSON (`<script id="shelf-books">`, escaped so titles cannot break the page); `shelf.js` adds them to its built-in books, sizes each cover face from the image and builds the spines. It uses the landing page's look (black, the same background video, the shared header and fonts from `wwwroot/landing/`)
 
 ## Notes
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).
@@ -238,6 +240,7 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 18. **Bookshelf page**: a 3D shelf with The King in Yellow, opened from the home page (see Features).
 19. **Landing page**, the dark library, and the same look on the Log in and Register pages.
 20. **Continue with Google** (see Google login): accounts are created already confirmed, and never linked automatically to an existing account.
+21. **Bookshelf fills itself**: every visible library book with a cover stands on it, with a spine made from the cover.
 
 ## Not done yet
 - A domain for email: until one is verified in Resend, emails only reach the Resend account's own address.

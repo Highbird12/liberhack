@@ -52,7 +52,7 @@
       <div class="m w"><span><a class="cta" href="/Library">Browse the library</a></span></div>
     </div>
     <div class="d-poster">
-      <svg viewBox="0 0 474 900" aria-hidden="true">
+      <svg class="poster" viewBox="0 0 474 900" aria-hidden="true">
         <defs>
           <clipPath id="pclip"><rect width="474" height="900" /></clipPath>
           <filter id="inkf" filterUnits="userSpaceOnUse" x="-200" y="-200" width="874" height="1300">
@@ -76,6 +76,8 @@
     </div>
   </div>
 
+  @* The library's books with covers (HomeController.Shelf); shelf.js adds them to the shelf. *@
+  <script type="application/json" id="shelf-books">@Html.Raw(ViewData["ShelfBooks"] as string ?? "[]")</script>
   <script src="~/landing/main.js" asp-append-version="true"></script>
   <script src="~/js/shelf.js" asp-append-version="true"></script>
 </body>
