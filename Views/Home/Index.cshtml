@@ -50,6 +50,36 @@ else if (found == 0)
 {
   <p class="text-muted">No books in the library yet.</p>
 }
+<section id="around-the-world" class="literary-map-section" hidden
+         data-boundaries="/data/world-countries.json"
+         data-leaflet-script="/lib/leaflet/leaflet.js"
+         data-leaflet-style="/lib/leaflet/leaflet.css">
+  <div class="literary-map-header">
+    <div>
+      <h2 tabindex="-1">Around the world</h2>
+      <p>Pick a country to see the books in this library from there.</p>
+    </div>
+    <a href="#collection" class="btn btn-outline-secondary">Back to the collection</a>
+  </div>
+  <div class="literary-map-controls">
+    <label class="form-label" for="map-country">Country</label>
+    <select id="map-country" class="form-select">
+      <option value="">Choose a country</option>
+    </select>
+  </div>
+  <p role="status" class="literary-map-status"></p>
+  <div class="literary-map-canvas"></div>
+  <div class="literary-map-results">
+    <h3></h3>
+    <div class="book-grid row row-cols-2 row-cols-md-4 g-3"></div>
+  </div>
+</section>
+
+<section id="collection" class="collection-section" tabindex="-1">
+<div class="collection-heading d-flex justify-content-between align-items-center">
+  <h2>Collection</h2>
+  <a href="#around-the-world">Explore the world map</a>
+</div>
 <div class="accordion" id="natList">
   @for (int i = 0; i < Model.Count; i++)
   {
@@ -65,7 +95,7 @@ else if (found == 0)
             @foreach (var b in g)
             {
               <div class="col">
-                <a asp-controller="Books" asp-action="Details" asp-route-id="@b.Id" class="text-decoration-none text-dark">
+                <a asp-controller="Books" asp-action="Details" asp-route-id="@b.Id" class="text-decoration-none text-dark book-card" data-nationality="@b.Nationality">
                   @if (!string.IsNullOrEmpty(b.CoverUrl)) { <img class="cover" src="@b.CoverUrl" alt="@b.Title" /> }
                   else { <div class="cover">@b.Title</div> }
                   <div class="mt-1 fw-semibold">@b.Title</div>
@@ -79,3 +109,8 @@ else if (found == 0)
     </div>
   }
 </div>
+</section>
+
+@section Scripts {
+  <script src="/js/literary-map.js" defer></script>
+}
