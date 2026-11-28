@@ -18,9 +18,21 @@ builder.Services.AddDbContext<ApplicationDbContext>(o =>
 builder.Services.AddDataProtection()
     .SetApplicationName("BookLibrary")
     .PersistKeysToDbContext<ApplicationDbContext>();
-builder.Services.AddDefaultIdentity<IdentityUser>(o => o.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddDefaultIdentity<IdentityUser>(o =>
+    {
+        o.SignIn.RequireConfirmedAccount = false;
+        // After 5 wrong passwords in a row an account is locked for 10 minutes (slows password guessing).
+        o.Lockout.MaxFailedAccessAttempts = 5;
+        o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+        o.Lockout.AllowedForNewUsers = true;
+    })
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager<LockoutSignInManager>();
+
+// Re-check logged-in users every minute, so blocking someone or changing their admin role
+// takes effect within a minute instead of the default 30.
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
 // Google login only turns on when keys are set (see user-secrets)
 var auth = builder.Services.AddAuthentication();
@@ -63,3 +75,6 @@ app.UseAuthorization();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapRazorPages();
 app.Run();
+
+// Lets the test project start the app (WebApplicationFactory<Program>).
+public partial class Program { }

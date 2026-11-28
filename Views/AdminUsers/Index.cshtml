@@ -1,0 +1,73 @@
+@model List<BookLibrary.Controllers.AdminUsersController.UserRow>
+@{
+  ViewData["Title"] = "Users";
+  var q = ViewBag.Q as string;
+}
+@if (TempData["Msg"] is string msg) { <div class="alert alert-success">@msg</div> }
+@if (TempData["Error"] is string err) { <div class="alert alert-danger">@err</div> }
+@if (TempData["ResetLink"] is string link)
+{
+  <div class="alert alert-info">
+    <div class="mb-2">Password reset link for <strong>@TempData["ResetEmail"]</strong>. Send it to them personally (it works once and expires after a day). They open it, type their email and a new password.</div>
+    <div class="input-group">
+      <input id="reset-link" class="form-control" value="@link" readonly />
+      <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('reset-link').value); this.textContent='Copied';">Copy</button>
+    </div>
+  </div>
+}
+<h1>Users</h1>
+<form method="get" class="row g-2 mb-3" role="search" style="max-width:40rem">
+  <div class="col">
+    <input type="search" name="q" value="@q" class="form-control" placeholder="Search by email" aria-label="Search by email" />
+  </div>
+  <div class="col-auto"><button class="btn btn-primary">Search</button></div>
+</form>
+@if (!Model.Any())
+{
+  <p class="text-muted">@(string.IsNullOrEmpty(q) ? "No users yet." : "No users match that email.")</p>
+}
+else
+{
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <tr><th>Email</th><th>Role</th><th>Status</th><th>Translations</th><th></th></tr>
+      @foreach (var u in Model)
+      {
+        <tr>
+          <td>@u.Email @if (u.IsSelf) { <span class="text-muted small">(you)</span> }</td>
+          <td>
+            @if (u.IsAdmin) { <span class="badge text-bg-warning">Admin</span> } else { <span class="text-muted">User</span> }
+            @if (u.IsConfiguredAdmin) { <div class="small text-muted">set in server settings</div> }
+          </td>
+          <td>
+            @if (u.IsBlocked) { <span class="badge text-bg-danger">Blocked</span> }
+            else if (u.LockedUntil is DateTimeOffset until) { <span class="badge text-bg-secondary">Locked after wrong passwords</span> <div class="small text-muted">until @until.ToLocalTime().ToString("HH:mm")</div> }
+            else { <span class="text-muted">Active</span> }
+          </td>
+          <td>@u.Translations</td>
+          <td class="text-end">
+            <div class="d-flex flex-wrap gap-1 justify-content-end">
+              @if (!u.IsAdmin)
+              {
+                <form method="post" asp-action="MakeAdmin" asp-route-id="@u.Id"><button class="btn btn-sm btn-outline-primary">Make admin</button></form>
+              }
+              else if (!u.IsSelf && !u.IsConfiguredAdmin)
+              {
+                <form method="post" asp-action="RemoveAdmin" asp-route-id="@u.Id"><button class="btn btn-sm btn-outline-secondary">Remove admin</button></form>
+              }
+              @if (u.IsBlocked || u.LockedUntil != null)
+              {
+                <form method="post" asp-action="Unblock" asp-route-id="@u.Id"><button class="btn btn-sm btn-outline-success">Unblock</button></form>
+              }
+              else if (!u.IsSelf && !u.IsAdmin)
+              {
+                <form method="post" asp-action="Block" asp-route-id="@u.Id" onsubmit="return confirm('Block this user? They will be logged out and cannot log in until unblocked.');"><button class="btn btn-sm btn-outline-danger">Block</button></form>
+              }
+              <form method="post" asp-action="ResetLink" asp-route-id="@u.Id"><button class="btn btn-sm btn-outline-dark">Password reset link</button></form>
+            </div>
+          </td>
+        </tr>
+      }
+    </table>
+  </div>
+}
