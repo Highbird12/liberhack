@@ -1,6 +1,7 @@
 @{
-  // A full-screen page with its own look, so it does not use the site layout.
+  // A full-screen page in the landing page's look (black, video, shared header), so it does not use the site layout.
   Layout = null;
+  ViewData["Nav"] = "shelf";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -8,18 +9,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bookshelf - Book Library</title>
-  <link rel="preload" href="/shelf/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/shelf/fonts/inter-tight.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos" rel="stylesheet" />
+  <link href="~/landing/styles.css" rel="stylesheet" asp-append-version="true" />
   <link href="~/css/shelf.css" rel="stylesheet" asp-append-version="true" />
 </head>
-<body>
+<body class="landing shelf-page">
   <div class="probe" aria-hidden="true"></div>
 
-  <header class="top">
-    <a class="back lbl box" asp-controller="Home" asp-action="Library">Back to library</a>
-    <div class="logo"><span class="name">Book Library</span><span class="tag">Bookshelf</span></div>
-    <div class="count lbl">1 book</div>
-  </header>
+  <div class="bg" aria-hidden="true">
+    <video class="bg-video" autoplay muted loop playsinline>
+      <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260809_012548_ef22562c-c0ae-4816-ad9d-f8922af4e6a7.mp4" type="video/mp4" />
+    </video>
+  </div>
+
+  <div class="shelf-top"><partial name="_VibeHeader" /></div>
 
   <section class="shelf" aria-label="Bookshelf"><div class="stage"></div></section>
 
@@ -27,30 +33,23 @@
 
   <div class="cap" aria-live="polite">
     <div class="mask"><span class="c-title"></span></div>
-    <div class="mask"><span class="c-sub lbl"></span></div>
+    <div class="mask"><span class="c-sub"></span></div>
     <div class="mask"><span class="c-year"></span></div>
   </div>
 
   <button class="arrow prev" aria-label="Previous book"><svg viewBox="0 0 18 10" aria-hidden="true"><path d="M5 1 L1 5 L5 9 M1 5 L17 5" fill="none" stroke="currentColor" stroke-width="1.2" /></svg></button>
   <button class="arrow next" aria-label="Next book"><svg viewBox="0 0 18 10" aria-hidden="true"><path d="M13 1 L17 5 L13 9 M17 5 L1 5" fill="none" stroke="currentColor" stroke-width="1.2" /></svg></button>
 
-  <footer class="foot">
-    <span class="lbl">Book Library</span>
-    <a class="lbl" asp-controller="Home" asp-action="Library">All books</a>
-  </footer>
-
-  <div class="grain" aria-hidden="true"></div>
-
   <div class="detail" role="dialog" aria-modal="true" aria-label="Book details" aria-hidden="true">
-    <button class="d-close lbl box">Close</button>
-    <div class="d-logo"><div class="logo"><span class="name">Book Library</span><span class="tag">Bookshelf</span></div></div>
+    <button class="d-close">Close</button>
+    <div class="d-logo"><span class="vh-logo"><img src="/landing/assets/logo.webp" alt="" width="52" height="52" /></span></div>
     <div class="d-text">
-      <div class="m"><span class="d-sub lbl"></span></div>
+      <div class="m"><span class="d-sub"></span></div>
       <div class="m"><span class="d-title"></span></div>
-      <div class="m"><span class="d-meta lbl"></span></div>
+      <div class="m"><span class="d-meta"></span></div>
       <div class="m"><span><p class="d-syn"></p></span></div>
       <div class="m"><span class="d-credit"></span></div>
-      <div class="m w"><span><a class="cta lbl" asp-controller="Home" asp-action="Library">Browse the library</a></span></div>
+      <div class="m w"><span><a class="cta" href="/Library">Browse the library</a></span></div>
     </div>
     <div class="d-poster">
       <svg viewBox="0 0 474 900" aria-hidden="true">
@@ -79,6 +78,7 @@
 
   <div class="cursor" aria-hidden="true"><div class="ring"></div><div class="dot"></div><div class="clabel">OPEN</div></div>
 
+  <script src="~/landing/main.js" asp-append-version="true"></script>
   <script src="~/js/shelf.js" asp-append-version="true"></script>
 </body>
 </html>

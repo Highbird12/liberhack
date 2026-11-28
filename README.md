@@ -122,7 +122,7 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 **Everyone**
 - **Landing page** (`/`): a full-screen page over a looping background video, with the headline, a short description and a **Browse the library** button. Its header (logo, Home, Library, Bookshelf, My translations when signed in, Sign in / Log out, and a menu button on phones) is shared with the library. Old search links such as `/?q=tolstoy` are sent on to `/Library`.
 - **Library** (`/Library`): books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included. It uses the dark look of the landing page; other pages keep the normal look.
-- **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button in the library and Bookshelf in the header): a full-screen 3D shelf. The book turns to show its cover; clicking the cover opens a page about the book that grows out of it. It shows one book for now, The King in Yellow, which is built into `wwwroot/js/shelf.js` (the `BOOKS` list) and is not one of the library's database books. Adding a second book to that list turns on the arrows, scrolling and dragging.
+- **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button in the library and Bookshelf in the header): a full-screen 3D shelf in the landing page's look (black, the same video and header). The book turns to show its cover; clicking the cover opens a page about the book that grows out of it. It shows one book for now, The King in Yellow, which is built into `wwwroot/js/shelf.js` (the `BOOKS` list) and is not one of the library's database books. Adding a second book to that list turns on the arrows, scrolling and dragging.
 - Book page: author, year, original language, summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
 - Accounts: after 5 wrong passwords in a row an account is locked for 10 minutes. With email set up (see Email), new accounts confirm their email address and "Forgot your password?" emails a reset link; without it, an admin creates reset links.
 
@@ -170,7 +170,7 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
 - `test-files/`: a sample .docx translation
 - `Views/Home/Index.cshtml`, `wwwroot/landing/`: the landing page (styles, menu script, logo, Geist Pixel Circle font with its licence). `Views/Shared/_VibeHeader.cshtml`: its header, also used by the library. `wwwroot/css/vibe.css`: the dark look of the library (a page turns it on with `ViewData["Vibe"] = true`). The headline font BubbledotICG-FinePos and Inter load from OnlineWebFonts and Google Fonts; the background video loads from CloudFront.
-- `Views/Home/Shelf.cshtml`, `wwwroot/css/shelf.css`, `wwwroot/js/shelf.js`, `wwwroot/shelf/`: the bookshelf page, its book image and its self-hosted fonts (Newsreader and Inter Tight, SIL Open Font License, licence texts next to the fonts)
+- `Views/Home/Shelf.cshtml`, `wwwroot/css/shelf.css`, `wwwroot/js/shelf.js`, `wwwroot/shelf/`: the bookshelf page and its book image. It uses the landing page's look (black, the same background video, the shared header and fonts from `wwwroot/landing/`)
 
 ## Notes
 - English PDFs in `wwwroot/pdfs` are placeholders; replace each with the real file (same name).

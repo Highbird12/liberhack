@@ -2,7 +2,7 @@
 @inject SignInManager<IdentityUser> SignInManager
 @*
   Header of the landing page and the dark library (styles: wwwroot/landing/styles.css, menu: wwwroot/landing/main.js).
-  ViewData["Nav"] names the active link: "home", "library" or "mine".
+  ViewData["Nav"] names the active link: "home", "library", "shelf" or "mine".
 *@
 @{
   var active = ViewData["Nav"] as string;
@@ -16,7 +16,7 @@
   <nav class="vh-nav" aria-label="Main">
     <a class="@Active("home")" aria-current="@Current("home")" href="/">Home</a>
     <a class="@Active("library")" aria-current="@Current("library")" href="/Library">Library</a>
-    <a asp-controller="Home" asp-action="Shelf">Bookshelf</a>
+    <a class="@Active("shelf")" aria-current="@Current("shelf")" asp-controller="Home" asp-action="Shelf">Bookshelf</a>
     @if (signedIn)
     {
       <a class="@Active("mine")" aria-current="@Current("mine")" asp-controller="Books" asp-action="Mine">My translations</a>
@@ -45,7 +45,7 @@
 <nav class="vh-menu" id="vh-menu" aria-label="Menu" hidden>
   <a class="@Active("home")" aria-current="@Current("home")" href="/">Home</a>
   <a class="@Active("library")" aria-current="@Current("library")" href="/Library">Library</a>
-  <a asp-controller="Home" asp-action="Shelf">Bookshelf</a>
+  <a class="@Active("shelf")" aria-current="@Current("shelf")" asp-controller="Home" asp-action="Shelf">Bookshelf</a>
   @if (signedIn)
   {
     <a class="@Active("mine")" aria-current="@Current("mine")" asp-controller="Books" asp-action="Mine">My translations</a>

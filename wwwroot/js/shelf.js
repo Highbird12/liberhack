@@ -90,7 +90,7 @@
     active = i;
     const b = BOOKS[i];
     swap(capTitle, 'c-title', b.title, dir, instant);
-    swap(capSub, 'c-sub lbl', b.author, dir, instant);
+    swap(capSub, 'c-sub', b.author, dir, instant);
     swap(capYear, 'c-year', String(b.year), dir, instant);
   }
 
