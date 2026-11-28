@@ -23,7 +23,14 @@
 
   <div class="book-details-content">
     <h1>@Model.Title</h1>
-    <p class="book-details-byline">@Model.Author, @Model.Nationality</p>
+    <p class="book-details-byline">
+      @Model.Author, @Model.Nationality@(Model.Year is int y ? $", {y}" : "")
+      @if (!string.IsNullOrEmpty(Model.Language)) { <br /><span>Original language: @Model.Language</span> }
+    </p>
+    @if (Model.Hidden)
+    {
+      <div class="alert alert-secondary">This book is hidden. Only admins can see it. Uncheck "Hidden" in Manage books to publish it.</div>
+    }
     <p class="book-details-description">@Model.Summary</p>
     @if (minePending)
     {

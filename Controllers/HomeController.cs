@@ -13,10 +13,10 @@ public class HomeController : Controller
 
     // q searches title and author; nationality filters to one group.
     // Filtering runs in memory so matching ignores case for Cyrillic too
-    // (SQLite's LIKE only ignores case for ASCII). Fine for a library of this size.
+    // (database LIKE matching depends on the database's collation). Fine for a library of this size.
     public async Task<IActionResult> Index(string? q, string? nationality)
     {
-        var all = await _db.Books.OrderBy(b => b.Title).ToListAsync();
+        var all = await _db.Books.Where(b => !b.Hidden).OrderBy(b => b.Title).ToListAsync();
         q = q?.Trim();
         nationality = nationality?.Trim();
 

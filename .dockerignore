@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.github/
+app.db*
+wwwroot/uploads/
+tests/
+**/*.user
+Dockerfile
+.dockerignore

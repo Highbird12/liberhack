@@ -1,10 +1,36 @@
 @model BookLibrary.Models.Translation
-@{ ViewData["Title"] = "Review"; }
-<h1>@Model.Book?.Title</h1>
+@{
+  ViewData["Title"] = "Review";
+  var currentApproved = ViewBag.CurrentApproved as string;
+  var pending = Model.Status == TranslationStatus.Pending;
+}
+<a asp-action="Index">Back to translation requests</a>
+<h1 class="mt-2">@Model.Book?.Title</h1>
 <p class="text-muted">Submitted by @Model.TranslatorName on @Model.SubmittedAt.ToString("yyyy-MM-dd HH:mm"). Status: @Model.Status</p>
 <div class="border p-3 mb-3" style="white-space:pre-wrap;max-height:60vh;overflow:auto">@Model.Text</div>
-<form method="post" asp-action="Decide" asp-route-id="@Model.Id">
-  <button name="approve" value="true" class="btn btn-success">Approve and publish</button>
-  <button name="approve" value="false" class="btn btn-danger">Reject</button>
-  <a class="btn btn-link" asp-action="Index">Back</a>
-</form>
+@if (!pending)
+{
+  <div class="alert alert-secondary">
+    This translation was already @Model.Status.ToString().ToLowerInvariant()@(Model.DecidedAt is DateTime d ? " on " + d.ToString("yyyy-MM-dd HH:mm") : "").
+    @if (!string.IsNullOrEmpty(Model.RejectionReason)) { <br /><strong>Reason:</strong> @Model.RejectionReason }
+  </div>
+}
+else
+{
+  @if (currentApproved != null)
+  {
+    <div class="alert alert-warning">
+      This book already has a published Bulgarian translation by @currentApproved.
+      Approving this one will replace it.
+    </div>
+  }
+  <form method="post" asp-action="Decide" asp-route-id="@Model.Id" style="max-width:40rem">
+    <div class="mb-3">
+      <label for="reason" class="form-label">Reason for rejecting (optional, shown to the translator)</label>
+      <textarea id="reason" name="reason" class="form-control" rows="3" maxlength="1000"></textarea>
+    </div>
+    <button name="approve" value="true" class="btn btn-success">Approve and publish</button>
+    <button name="approve" value="false" class="btn btn-danger">Reject</button>
+    <a class="btn btn-link" asp-action="Index">Back</a>
+  </form>
+}

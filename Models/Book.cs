@@ -13,6 +13,12 @@ public class Book
     public string Summary { get; set; } = "";
     public string? CoverUrl { get; set; }
     public string? EnglishPdf { get; set; }
+    // Year the book was first published (can be empty).
+    public int? Year { get; set; }
+    // Language the book was originally written in, e.g. "English" or "Russian".
+    public string? Language { get; set; }
+    // Hidden books are only visible to admins (for preparing a book before publishing it).
+    public bool Hidden { get; set; }
     public List<Translation> Translations { get; set; } = new();
 }
 

@@ -1,5 +1,12 @@
 @model List<IGrouping<string, BookLibrary.Models.Book>>
-@{ ViewData["Title"] = "Library"; }
+@{
+  ViewData["Title"] = "Library";
+  var q = ViewBag.Q as string;
+  var selectedNationality = ViewBag.Nationality as string;
+  var nationalities = ViewBag.Nationalities as List<string> ?? new List<string>();
+  var filtering = !string.IsNullOrEmpty(q) || !string.IsNullOrEmpty(selectedNationality);
+  var found = Model.Sum(g => g.Count());
+}
 <style>
   .cover { height: 240px; display: flex; align-items: center; justify-content: center; text-align: center;
            padding: 12px; color: #fff; font-weight: 600; border-radius: .5rem; background: #3b4a6b; }
@@ -9,18 +16,50 @@
   <h1>Library</h1>
   @if (User.IsInRole("Admin"))
   {
-    <a class="btn btn-warning" asp-controller="Admin" asp-action="Index">Translation requests</a>
+    <div>
+      <a class="btn btn-outline-secondary" asp-controller="AdminBooks" asp-action="Index">Manage books</a>
+      <a class="btn btn-warning" asp-controller="Admin" asp-action="Index">Translation requests</a>
+    </div>
   }
 </div>
+<form method="get" asp-action="Index" class="row g-2 mb-3" role="search">
+  <div class="col-sm-6">
+    <input type="search" name="q" value="@q" class="form-control" placeholder="Search by title or author" aria-label="Search by title or author" />
+  </div>
+  <div class="col-sm-4">
+    <select name="nationality" class="form-select" aria-label="Nationality">
+      <option value="">All nationalities</option>
+      @foreach (var n in nationalities)
+      {
+        <option value="@n" selected="@(string.Equals(n, selectedNationality, StringComparison.OrdinalIgnoreCase))">@n</option>
+      }
+    </select>
+  </div>
+  <div class="col-sm-2 d-grid">
+    <button class="btn btn-primary">Search</button>
+  </div>
+</form>
+@if (filtering)
+{
+  <p class="text-muted">
+    @(found == 0 ? "No books match your search." : found == 1 ? "1 book found." : $"{found} books found.")
+    <a asp-action="Index">Clear search</a>
+  </p>
+}
+else if (found == 0)
+{
+  <p class="text-muted">No books in the library yet.</p>
+}
 <div class="accordion" id="natList">
   @for (int i = 0; i < Model.Count; i++)
   {
     var g = Model[i];
     <div class="accordion-item">
       <h2 class="accordion-header">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nat-@i">@g.Key (@g.Count())</button>
+        @* Search results open every group so matches are visible straight away *@
+        <button class="accordion-button @(filtering ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#nat-@i" aria-expanded="@(filtering ? "true" : "false")">@g.Key (@g.Count())</button>
       </h2>
-      <div id="nat-@i" class="accordion-collapse collapse" data-bs-parent="#natList">
+      <div id="nat-@i" class="accordion-collapse collapse @(filtering ? "show" : "")" data-bs-parent="@(filtering ? null : "#natList")">
         <div class="accordion-body">
           <div class="row row-cols-2 row-cols-md-4 g-3">
             @foreach (var b in g)
@@ -30,7 +69,7 @@
                   @if (!string.IsNullOrEmpty(b.CoverUrl)) { <img class="cover" src="@b.CoverUrl" alt="@b.Title" /> }
                   else { <div class="cover">@b.Title</div> }
                   <div class="mt-1 fw-semibold">@b.Title</div>
-                  <small class="text-muted">@b.Author</small>
+                  <small class="text-muted">@b.Author@(b.Year is int y ? $", {y}" : "")</small>
                 </a>
               </div>
             }

@@ -1,20 +1,20 @@
 using BookLibrary.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace BookLibrary.Data;
 
 public static class SeedData
 {
-    static Book B(string t, string a, string n, string s, string f) =>
-        new() { Title = t, Author = a, Nationality = n, Summary = s, EnglishPdf = $"/pdfs/{f}.pdf", CoverUrl = $"/covers/{f}.svg" };
+    static Book B(string t, string a, string n, string s, string f, int year, string language) =>
+        new() { Title = t, Author = a, Nationality = n, Summary = s, EnglishPdf = $"/pdfs/{f}.pdf", CoverUrl = $"/covers/{f}.svg",
+                Year = year, Language = language };
 
     public static async Task InitAsync(IServiceProvider sp)
     {
         var db = sp.GetRequiredService<ApplicationDbContext>();
-        await BaselineOldDatabaseAsync(db);
         await db.Database.MigrateAsync();
+        await EnsureRowLevelSecurityAsync(sp, db);
 
         var roles = sp.GetRequiredService<RoleManager<IdentityRole>>();
         if (!await roles.RoleExistsAsync("Admin")) await roles.CreateAsync(new IdentityRole("Admin"));
@@ -24,54 +24,45 @@ public static class SeedData
         if (!db.Books.Any())
         {
             db.Books.AddRange(
-                B("Pride and Prejudice", "Jane Austen", "English", "Elizabeth Bennet and the proud Mr. Darcy misjudge each other while her family hunts for suitable marriages.", "pride"),
-                B("Frankenstein", "Mary Shelley", "English", "A young scientist builds a living creature, then abandons it and faces the consequences.", "frankenstein"),
-                B("Dracula", "Bram Stoker", "Irish", "A group of friends hunts the Transylvanian count who is preying on England.", "dracula"),
-                B("Crime and Punishment", "Fyodor Dostoevsky", "Russian", "A poor student commits a murder and is consumed by guilt in St. Petersburg.", "crime"),
-                B("Anna Karenina", "Leo Tolstoy", "Russian", "A married noblewoman's affair unravels her life while a landowner searches for meaning.", "anna"),
-                B("Les Misérables", "Victor Hugo", "French", "Ex-convict Jean Valjean tries to rebuild his life while being pursued by an inspector.", "miserables"),
-                B("Around the World in 80 Days", "Jules Verne", "French", "Phileas Fogg bets he can circle the globe in eighty days.", "eighty-days"),
-                B("Moby-Dick", "Herman Melville", "American", "Captain Ahab's obsessive hunt for a white whale drives his crew to disaster.", "moby"));
+                B("Pride and Prejudice", "Jane Austen", "English", "Elizabeth Bennet and the proud Mr. Darcy misjudge each other while her family hunts for suitable marriages.", "pride", 1813, "English"),
+                B("Frankenstein", "Mary Shelley", "English", "A young scientist builds a living creature, then abandons it and faces the consequences.", "frankenstein", 1818, "English"),
+                B("Dracula", "Bram Stoker", "Irish", "A group of friends hunts the Transylvanian count who is preying on England.", "dracula", 1897, "English"),
+                B("Crime and Punishment", "Fyodor Dostoevsky", "Russian", "A poor student commits a murder and is consumed by guilt in St. Petersburg.", "crime", 1866, "Russian"),
+                B("Anna Karenina", "Leo Tolstoy", "Russian", "A married noblewoman's affair unravels her life while a landowner searches for meaning.", "anna", 1878, "Russian"),
+                B("Les Misérables", "Victor Hugo", "French", "Ex-convict Jean Valjean tries to rebuild his life while being pursued by an inspector.", "miserables", 1862, "French"),
+                B("Around the World in 80 Days", "Jules Verne", "French", "Phileas Fogg bets he can circle the globe in eighty days.", "eighty-days", 1872, "French"),
+                B("Moby-Dick", "Herman Melville", "American", "Captain Ahab's obsessive hunt for a white whale drives his crew to disaster.", "moby", 1851, "English"));
             await db.SaveChangesAsync();
         }
     }
 
-    // Before migrations, the app created app.db with EnsureCreated. Those databases already have
-    // every InitialCreate table but no migration history, so Migrate would fail trying to create
-    // them again. Record InitialCreate as applied so their data is kept and later migrations run.
-    static async Task BaselineOldDatabaseAsync(ApplicationDbContext db)
+    // Supabase exposes tables in the public schema through its Data API, which anyone holding the
+    // project's public key can call. Turning on row-level security with no policies blocks that
+    // access completely. This app connects as the table owner, which is not affected by it.
+    // Runs on every start so tables added by future migrations are covered too, and only touches
+    // tables that do not have it yet. A failure is logged, not fatal, so a database where this
+    // user is not allowed to change the tables still starts.
+    static async Task EnsureRowLevelSecurityAsync(IServiceProvider sp, ApplicationDbContext db)
     {
-        var conn = db.Database.GetDbConnection();
-        await conn.OpenAsync();
+        var log = sp.GetRequiredService<ILoggerFactory>().CreateLogger("SeedData");
         try
         {
-            async Task<bool> TableExists(string name)
-            {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = $name";
-                var p = cmd.CreateParameter();
-                p.ParameterName = "$name";
-                p.Value = name;
-                cmd.Parameters.Add(p);
-                return Convert.ToInt64(await cmd.ExecuteScalarAsync()) > 0;
-            }
+            var unsecured = await db.Database
+                .SqlQueryRaw<string>("SELECT tablename AS \"Value\" FROM pg_tables WHERE schemaname = 'public' AND NOT rowsecurity")
+                .ToListAsync();
+            if (unsecured.Count == 0) return;
 
-            if (!await TableExists("Books") || await TableExists("__EFMigrationsHistory")) return;
-
-            var initial = db.Database.GetMigrations().First();
-            using var create = conn.CreateCommand();
-            create.CommandText =
-                "CREATE TABLE \"__EFMigrationsHistory\" (" +
-                "\"MigrationId\" TEXT NOT NULL CONSTRAINT \"PK___EFMigrationsHistory\" PRIMARY KEY, " +
-                "\"ProductVersion\" TEXT NOT NULL); " +
-                "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ($id, $version);";
-            var id = create.CreateParameter(); id.ParameterName = "$id"; id.Value = initial; create.Parameters.Add(id);
-            var ver = create.CreateParameter(); ver.ParameterName = "$version"; ver.Value = ProductInfo.GetVersion(); create.Parameters.Add(ver);
-            await create.ExecuteNonQueryAsync();
+            await db.Database.ExecuteSqlRawAsync(
+                "DO $$ DECLARE r record; BEGIN " +
+                "FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND NOT rowsecurity LOOP " +
+                "EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', r.tablename); " +
+                "END LOOP; END $$;");
+            log.LogInformation("Turned on row-level security for: {Tables}", string.Join(", ", unsecured));
         }
-        finally
+        catch (Exception ex)
         {
-            await conn.CloseAsync();
+            log.LogWarning(ex, "Could not turn on row-level security. If this database is exposed through an API " +
+                               "(for example Supabase's Data API), enable it by hand; see the README.");
         }
     }
 
