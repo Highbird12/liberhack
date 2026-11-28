@@ -52,10 +52,10 @@
   }
 
   let s = multi ? N : 0, T = s, active = -1;
-  let mx = innerWidth / 2, my = innerHeight / 2, cx = mx, cy = my;
+  let mx = innerWidth / 2, my = innerHeight / 2;
   let tiltX = 0, tiltY = 0, onCover = false;
   let H = 0, ws = 0, d = 0, gap = 0, W = innerWidth, VH = innerHeight;
-  let dragging = false, drag = null, overEl = null;
+  let dragging = false, drag = null;
 
   function measure() {
     H = $('.probe').getBoundingClientRect().height;
@@ -123,7 +123,7 @@
     drag = { x: e.clientX, T0: T, moved: false };
   });
   addEventListener('pointermove', e => {
-    mx = e.clientX; my = e.clientY; overEl = e.target;
+    mx = e.clientX; my = e.clientY;
     if (!drag) return;
     const dx = e.clientX - drag.x;
     if (!drag.moved && Math.abs(dx) > 5) { drag.moved = true; dragging = true; }
@@ -135,9 +135,6 @@
     drag = null; dragging = false;
   });
   addEventListener('pointercancel', () => { if (drag) { T = Math.round(T); drag = null; dragging = false; } });
-
-  const cursor = $('.cursor');
-  function setCursor(state) { for (const c of ['spine', 'btn', 'open']) cursor.classList.toggle(c, c === state); }
 
   // Detail sheet: grows out of the cover, text rises, the cover bleeds in through an ink mask
   const detail = $('.detail'), pimg = $('.pimg', detail), blobs = [...detail.querySelectorAll('circle')];
@@ -223,9 +220,6 @@
     if (a !== active) setActive(a, Math.sign(T - s) || 1);
 
     const shelfY = VH / 2;
-    const ka = 1 - Math.exp(-16 * dt);
-    cx += (mx - cx) * ka; cy += (my - cy) * ka;
-    cursor.style.transform = `translate3d(${cx}px,${cy}px,0)`;
 
     onCover = !isOpen && Math.abs(mx - W / 2) < .55 * d && Math.abs(my - shelfY) < .55 * H && Math.abs(T - s) < .3;
     let tY, tX;
@@ -254,12 +248,8 @@
     const ps = isOpen ? 0 : smooth(Math.max(0, 1 - Math.abs(T - s) * 3));
     play.style.transform = `translate3d(${W / 2 - .5 * d - 6}px,${shelfY + .36 * H}px,0) scale(${ps})`;
 
-    let state = '';
-    if (isOpen) { if (overEl && overEl.closest && overEl.closest('button,a')) state = 'btn'; }
-    else if (onCover) state = 'open';
-    else if (hover >= 0 && Math.abs(rel(hover, s)) > .5) state = 'spine';
-    else if (overEl && overEl.closest && overEl.closest('button,a') && !overEl.closest('.shelf')) state = 'btn';
-    setCursor(state);
+    // The normal mouse arrow is used; the clickable cover shows a pointing hand (see shelf.css)
+    shelf.classList.toggle('on-cover', onCover);
 
     requestAnimationFrame(frame);
   }

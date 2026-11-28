@@ -8,9 +8,10 @@
   user-select: none;
   -webkit-user-select: none;
 }
-@media (pointer: fine) { .shelf-page, .shelf-page button, .shelf-page a { cursor: none; } }
 /* :where() keeps this reset weak, so the shared header's buttons (menu, Log out) keep their own styles */
 :where(.shelf-page) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; }
+/* Normal mouse arrow; a pointing hand where a click does something */
+.shelf.on-cover, .tape, .play, .arrow, .d-close { cursor: pointer; }
 .probe { position: fixed; left: -9999px; top: 0; width: 1px; height: var(--H); visibility: hidden; pointer-events: none; }
 
 /* Shared header, fixed at the top above the shelf (z-index 45: above the shelf, below the detail sheet) */
@@ -93,21 +94,6 @@
 .d-poster { align-self: center; justify-self: center; height: min(100%, 78vh); aspect-ratio: 474 / 900; max-width: 100%; filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.8)); }
 .d-poster svg { display: block; width: 100%; height: 100%; }
 
-/* Cursor: white ring; over the cover it becomes a white disc, like the home page's button */
-.cursor { position: fixed; left: 0; top: 0; width: 58px; height: 58px; margin: -29px 0 0 -29px; z-index: 100; pointer-events: none; display: none; }
-@media (pointer: fine) { .cursor { display: block; } }
-.cursor .ring { position: absolute; inset: 0; border: 1.5px solid #fff; border-radius: 50%; background-color: transparent;
-  transition: transform 0.5s var(--ease-out), background-color 0.4s var(--ease-out), border-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out); }
-.cursor .dot { position: absolute; left: 26px; top: 26px; width: 6px; height: 6px; border-radius: 50%; background: #fff; transition: transform 0.4s var(--ease-out); }
-.cursor .clabel { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font: 600 10px / 1.25 var(--font-sans); letter-spacing: 0.1em; color: #000; transform: scale(0); transition: transform 0.45s var(--ease-out); }
-.cursor.spine .ring { transform: scale(0.72); }
-.cursor.btn .ring { transform: scale(0.55); }
-.cursor.btn .dot { transform: scale(0); }
-.cursor.open .ring { transform: scale(1.75); background-color: #fff; border-color: #fff; box-shadow: 0 0 22px rgba(255, 255, 255, 0.32), 0 0 44px rgba(255, 255, 255, 0.12); }
-.cursor.open .dot { transform: scale(0); }
-.cursor.open .clabel { transform: scale(1); }
-
 /* Phones */
 @media (max-width: 720px) {
   .shelf-page { --H: min(60vw, 40svh); }
@@ -119,6 +105,3 @@
   .d-syn { font-size: 16px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .cursor .ring, .cursor .dot, .cursor .clabel { transition: none; }
-}

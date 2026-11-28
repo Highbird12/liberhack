@@ -43,6 +43,7 @@ public class ShelfTests(AppFactory app) : IClassFixture<AppFactory>
         Assert.Contains("class=\"vh-nav\"", html);
         Assert.Contains("class=\"active\" aria-current=\"page\" href=\"/Home/Shelf\"", html); // Bookshelf is the active link
         Assert.Contains("/landing/main.js", html);                                               // phone menu
+        Assert.DoesNotContain("class=\"cursor\"", html);                                          // normal mouse arrow, no custom ring
     }
 
     [Theory]
