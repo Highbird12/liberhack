@@ -47,6 +47,27 @@ In Visual Studio, open `BookLibrary.csproj`, pick the **BookLibrary** profile an
 - On a server, set the environment variables `Admin__Email` and `Admin__Password` instead.
 - Without these settings the app still runs, but no admin is created (a warning is logged at startup).
 
+## Hosting on Render
+The repo has a `Dockerfile`, so Render (or any host that runs containers) can build and run the app.
+
+1. In Render, create a **Web Service** from this GitHub repo. Choose the **Docker** runtime and the branch to deploy (`main`).
+2. Add these environment variables in Render's dashboard (type the values there; never put them in the repo or in chat):
+   - `ConnectionStrings__Default`: your Supabase **Session pooler** string (see Database above)
+   - `Admin__Email` and `Admin__Password`: the admin account to create on the first start
+3. Deploy. Render sets the `PORT` variable and the app listens on it. Open the service's `onrender.com` address and log in as the admin.
+
+How it behaves on a host:
+- The app runs in Production mode, as a non-root user, behind Render's HTTPS proxy (the `X-Forwarded-*` headers are trusted).
+- Login cookies and form tokens use keys kept in the database (table `DataProtectionKeys`), so people stay logged in after a redeploy or a restart.
+- **Uploaded covers and PDFs are lost on every deploy.** A container's disk is wiped, and `wwwroot/uploads/` is on it. Add a Render persistent disk (a paid feature) or move uploads to Supabase Storage before relying on admin uploads. The seeded covers and PDFs are part of the image and are not affected.
+- On Render's free plan the service goes to sleep when nobody visits, so the first request afterwards can take about a minute.
+- Every push to the deployed branch redeploys automatically, and new migrations are applied when the app starts.
+
+To try the image on your own PC (needs Docker):
+
+    docker build -t booklibrary .
+    docker run -p 10000:10000 -e PORT=10000 -e "ConnectionStrings__Default=..." -e Admin__Email=you@example.com -e "Admin__Password=..." booklibrary
+
 ## Google login (optional)
 1. Google Cloud Console > APIs & Services > Credentials > Create OAuth client ID (Web application).
 2. Authorized redirect URI: `https://localhost:7080/signin-google`
@@ -89,6 +110,7 @@ In Visual Studio, open `BookLibrary.csproj`, pick the **BookLibrary** profile an
 ## Project layout
 - `Controllers/`: `HomeController` (library and search), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management)
 - `Models/`: `Book`, `Translation` and `TranslationStatus` (Pending, Approved, Rejected, Replaced), `BookForm` (admin add/edit form)
+- `Dockerfile`, `.dockerignore`: build and run the app in a container (Render)
 - `Data/`: `ApplicationDbContext`, `DatabaseConfig` (reads the connection string), `SeedData` (migrations, sample books, admin account), `Migrations/`
 - `Views/`: Razor pages for each controller
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
@@ -125,11 +147,13 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 7. `.gitignore` now also ignores `wwwroot/uploads/`, `.vs/` and the SQLite side files.
 8. **Database switched from SQLite to PostgreSQL (Supabase)**: new `DatabaseConfig` reads `ConnectionStrings:Default` (Npgsql or `postgresql://` form, encryption on for remote hosts), the SQLite package and the SQLite-only upgrade code are gone, and the migrations were regenerated for Postgres as a single `InitialCreate`. Data in an old local `app.db` is not carried over.
 9. **Row-level security on every table**, applied automatically at startup (see Notes), so Supabase's public API key cannot read or change the app's tables.
+10. **Container and hosting setup for Render**: `Dockerfile`, the app listens on the host's `PORT`, and trusts the host's HTTPS proxy headers (see Hosting on Render).
+11. **Login keys stored in the database** (`DataProtectionKeys`, migration `DataProtectionKeys`) so logins survive redeploys.
 
 ## Not done yet
 - Automated tests (everything so far was checked by hand in a browser).
 - More book details such as year, language or a hidden/published flag. Decide with the team first.
-- Hosting (for example a Dockerfile for Render) and permanent storage for uploads (Supabase Storage).
+- Permanent storage for uploads (a Render disk or Supabase Storage).
 - Email confirmation, password reset by email, and a page for admins to manage users.
 - Google login is untested.
 - The first commit in git history still contains the old hardcoded admin password. Change that password anywhere it was used.

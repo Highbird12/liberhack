@@ -1,11 +1,22 @@
 using BookLibrary.Data;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Hosts such as Render tell the app which port to listen on with the PORT variable.
+// Without it (on your own PC) the usual launch settings are used.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port)) builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 builder.Services.AddDbContext<ApplicationDbContext>(o =>
     o.UseNpgsql(DatabaseConfig.GetConnectionString(builder.Configuration)));
+// Keep the keys behind login cookies in the database instead of the container's disk, which is
+// wiped on every deploy (that would log everyone out each time).
+builder.Services.AddDataProtection()
+    .SetApplicationName("BookLibrary")
+    .PersistKeysToDbContext<ApplicationDbContext>();
 builder.Services.AddDefaultIdentity<IdentityUser>(o => o.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
