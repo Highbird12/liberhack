@@ -43,6 +43,7 @@ else
             @if (u.IsBlocked) { <span class="badge text-bg-danger">Blocked</span> }
             else if (u.LockedUntil is DateTimeOffset until) { <span class="badge text-bg-secondary">Locked after wrong passwords</span> <div class="small text-muted">until @until.ToLocalTime().ToString("HH:mm")</div> }
             else { <span class="text-muted">Active</span> }
+            @if (!u.EmailConfirmed) { <div><span class="badge text-bg-light border">Email not confirmed</span></div> }
           </td>
           <td>@u.Translations</td>
           <td class="text-end">
@@ -62,6 +63,10 @@ else
               else if (!u.IsSelf && !u.IsAdmin)
               {
                 <form method="post" asp-action="Block" asp-route-id="@u.Id" onsubmit="return confirm('Block this user? They will be logged out and cannot log in until unblocked.');"><button class="btn btn-sm btn-outline-danger">Block</button></form>
+              }
+              @if (!u.EmailConfirmed)
+              {
+                <form method="post" asp-action="ConfirmEmail" asp-route-id="@u.Id"><button class="btn btn-sm btn-outline-secondary">Confirm email</button></form>
               }
               <form method="post" asp-action="ResetLink" asp-route-id="@u.Id"><button class="btn btn-sm btn-outline-dark">Password reset link</button></form>
             </div>

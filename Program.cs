@@ -2,6 +2,10 @@ using BookLibrary.Data;
 using BookLibrary.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +33,36 @@ builder.Services.AddDefaultIdentity<IdentityUser>(o =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager<LockoutSignInManager>();
+
+// Email (Services/Email.cs). Decided when the app starts serving, from the final settings:
+// with email configured, new accounts must confirm their email address before logging in.
+builder.Services.AddOptions<IdentityOptions>()
+    .Configure<IConfiguration>((o, config) => o.SignIn.RequireConfirmedAccount = EmailSettings.IsConfigured(config));
+builder.Services.AddHttpClient(ResendEmailSender.HttpClientName, c =>
+{
+    c.BaseAddress = new Uri("https://api.resend.com/");
+    c.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddTransient<IEmailSender, ResendEmailSender>();
+
+// Limit how often one IP address can use the pages that send email (only while email is on).
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy(EmailRateLimit, http =>
+    {
+        var config = http.RequestServices.GetRequiredService<IConfiguration>();
+        if (!EmailSettings.IsConfigured(config)) return RateLimitPartition.GetNoLimiter("email-off");
+        return RateLimitPartition.GetFixedWindowLimiter(http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = EmailSettings.RequestsPer15Minutes(config), Window = TimeSpan.FromMinutes(15) });
+    });
+});
+builder.Services.Configure<RazorPagesOptions>(o =>
+{
+    foreach (var page in new[] { "/Account/Register", "/Account/ForgotPassword", "/Account/ResendEmailConfirmation" })
+        o.Conventions.AddAreaPageApplicationModelConvention("Identity", page,
+            m => m.EndpointMetadata.Add(new EnableRateLimitingAttribute(EmailRateLimit)));
+});
 
 // Re-check logged-in users every minute, so blocking someone or changing their admin role
 // takes effect within a minute instead of the default 30.
@@ -70,6 +104,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
@@ -77,4 +112,8 @@ app.MapRazorPages();
 app.Run();
 
 // Lets the test project start the app (WebApplicationFactory<Program>).
-public partial class Program { }
+public partial class Program
+{
+    // Name of the rate limit on the pages that send email.
+    public const string EmailRateLimit = "email";
+}

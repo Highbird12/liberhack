@@ -86,6 +86,26 @@ On your PC set them with `dotnet user-secrets set "Storage:Supabase:Url" "..."` 
 - Files get random names. Replacing or removing a cover or PDF, or deleting a book, deletes its old file from the bucket. If storage refuses an upload (for example a file larger than the project allows), the admin sees a message and the book is not changed.
 - Books whose files were uploaded before this was set up point at `/uploads/...` files that may no longer exist; upload those covers again.
 
+## Email (optional)
+The site sends email through **Resend** (resend.com), using its web API. Render's free plan blocks the normal email (SMTP) ports, so an SMTP server would not work there.
+
+| Setting | Value |
+|---|---|
+| `Email:Resend:ApiKey` | a Resend API key (Resend: **API Keys > Create API Key**, "Sending access") |
+| `Email:From` | the sender, e.g. `Book Library <noreply@yourdomain.com>` |
+| `Email:RequestsPer15Minutes` | optional, default 10 (see below) |
+
+On Render use `Email__Resend__ApiKey` and `Email__From`; on your PC, `dotnet user-secrets set "Email:Resend:ApiKey" "..."`. Never put the key in the repo or in chat.
+
+**A domain is needed to email anyone.** Resend only sends to other people from an address on a domain you own and have verified in Resend (**Domains > Add Domain**, then add the DNS records it shows at your domain registrar). Without a domain you can test with `Email:From` set to `Book Library <onboarding@resend.dev>`, but then Resend only delivers to the email address of your own Resend account.
+
+With both settings present:
+- **New accounts must confirm their email address** before they can log in. Registering sends a link; "Resend email confirmation" on the login page sends it again. Accounts that existed before this feature (migration `ConfirmExistingUsers`) count as confirmed, and an admin can confirm anyone by hand on the Users page.
+- **"Forgot your password?" emails a reset link** (works once, expires after a day). The page gives the same answer whether or not the address has an account, and blocked accounts get no link.
+- The pages that send email (register, forgot password, resend confirmation) accept at most `Email:RequestsPer15Minutes` requests per IP address per 15 minutes, so nobody can use the site to flood an inbox.
+
+Without the settings nothing is sent: accounts work without confirmation and "Forgot your password?" tells people to ask an admin, who can create a reset link on the Users page.
+
 ## Google login (optional)
 1. Google Cloud Console > APIs & Services > Credentials > Create OAuth client ID (Web application).
 2. Authorized redirect URI: `https://localhost:7080/signin-google`
@@ -100,7 +120,7 @@ On your PC set them with `dotnet user-secrets set "Storage:Supabase:Url" "..."` 
 **Everyone**
 - Library home page: books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included.
 - Book page: author, year, original language, summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
-- Accounts: after 5 wrong passwords in a row an account is locked for 10 minutes. "Forgot your password?" explains that an admin can send a reset link (the site cannot send email).
+- Accounts: after 5 wrong passwords in a row an account is locked for 10 minutes. With email set up (see Email), new accounts confirm their email address and "Forgot your password?" emails a reset link; without it, an admin creates reset links.
 
 **Logged-in users**
 - **Translate to Bulgarian**: upload a .docx or a text-based PDF.
@@ -191,9 +211,10 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 13. **Book details**: year, original language and a hidden flag (migration `BookDetails`, which also fills these in for the 8 sample books).
 14. **Users page** for admins: make and remove admins, block and unblock, password reset links.
 15. **Account safety**: lockout after 5 wrong passwords, quicker sign-out of blocked users, and an honest forgot-password page.
-16. **Automated tests** (33) and a GitHub workflow that runs them on every pull request.
+16. **Automated tests** and a GitHub workflow that runs them on every pull request.
+17. **Email through Resend** (`Services/Email.cs`): email confirmation for new accounts, password reset emails, rate limiting on the email pages, and a "Confirm email" button for admins. Off until `Email:Resend:ApiKey` and `Email:From` are set.
 
 ## Not done yet
-- Email: confirming email addresses and sending password reset emails (needs an email service). Until then admins create reset links on the Users page.
+- A domain for email: until one is verified in Resend, emails only reach the Resend account's own address.
 - Google login is untested.
 - The first commit in git history still contains the old hardcoded admin password. Change that password anywhere it was used.
