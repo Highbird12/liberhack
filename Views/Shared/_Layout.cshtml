@@ -1,5 +1,26 @@
+@{
+  // A page sets ViewData["Vibe"] = true to use the dark look of the landing page (header from _VibeHeader, styles in css/vibe.css).
+  var vibe = ViewData["Vibe"] as bool? == true;
+
+  // The log in / register flow of ASP.NET Identity gets the dark look plus the landing page's video behind it.
+  // These pages are the built-in ones, so they cannot set ViewData themselves; the layout recognises them by route.
+  var authPages = new[]
+  {
+    "/Account/Login", "/Account/Register", "/Account/RegisterConfirmation", "/Account/ForgotPassword",
+    "/Account/ForgotPasswordConfirmation", "/Account/ResetPassword", "/Account/ResetPasswordConfirmation",
+    "/Account/ConfirmEmail", "/Account/ResendEmailConfirmation", "/Account/ExternalLogin", "/Account/Lockout",
+    "/Account/Logout", "/Account/AccessDenied"
+  };
+  var isAuth = ViewContext.RouteData.Values["area"] as string == "Identity"
+               && authPages.Contains(ViewContext.RouteData.Values["page"] as string);
+  if (isAuth) vibe = true;
+
+  // The landing page's looping video behind the page: the log in pages, and any page that sets ViewData["Video"] = true.
+  var video = isAuth || ViewData["Video"] as bool? == true;
+  var bodyClass = string.Join(" ", new[] { vibe ? "vibe" : null, isAuth ? "auth" : null, video ? "video" : null }.Where(c => c != null));
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="@(vibe ? "dark" : "light")">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,28 +28,63 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="/css/site.css" rel="stylesheet" />
   <link href="/css/literary-map.css" rel="stylesheet" />
+  @if (vibe)
+  {
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos" rel="stylesheet" />
+    <link href="~/landing/styles.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/vibe.css" rel="stylesheet" asp-append-version="true" />
+  }
 </head>
-<body>
-  <nav class="navbar navbar-expand-sm navbar-dark bg-dark mb-4">
-    <div class="container">
-      <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Book Library</a>
-      <ul class="navbar-nav me-auto">
-        @if (User.Identity?.IsAuthenticated == true)
-        {
-          <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Books" asp-action="Mine">My translations</a></li>
-        }
-        @if (User.IsInRole("Admin"))
-        {
-          <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="AdminBooks" asp-action="Index">Manage books</a></li>
-          <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="AdminUsers" asp-action="Index">Users</a></li>
-          <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">Translation requests</a></li>
-        }
-      </ul>
-      <partial name="_LoginPartial" />
+<body class="@(bodyClass.Length > 0 ? bodyClass : null)">
+  @if (video)
+  {
+    <div class="bg" aria-hidden="true">
+      <video class="bg-video" autoplay muted loop playsinline>
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260809_012548_ef22562c-c0ae-4816-ad9d-f8922af4e6a7.mp4" type="video/mp4" />
+      </video>
     </div>
-  </nav>
+  }
+  @if (vibe)
+  {
+    <div class="vibe-top"><partial name="_VibeHeader" /></div>
+  }
+  else
+  {
+    <nav class="navbar navbar-expand-sm navbar-dark bg-dark mb-4">
+      <div class="container">
+        <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Book Library</a>
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Library">Library</a></li>
+          @if (User.Identity?.IsAuthenticated == true)
+          {
+            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Books" asp-action="Mine">My translations</a></li>
+          }
+          @if (User.IsInRole("Admin"))
+          {
+            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="AdminBooks" asp-action="Index">Manage books</a></li>
+            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="AdminUsers" asp-action="Index">Users</a></li>
+            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">Translation requests</a></li>
+          }
+        </ul>
+        <partial name="_LoginPartial" />
+      </div>
+    </nav>
+  }
   <main class="container pb-5">@RenderBody()</main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  @if (ViewContext.RouteData.Values["area"] as string == "Identity")
+  {
+    @* Identity's own validation scripts (its _ValidationScriptsPartial) expect the layout to have loaded jQuery.
+       Identity ships a copy as a static file, so no CDN is needed. *@
+    <script src="~/Identity/lib/jquery/dist/jquery.min.js"></script>
+  }
+  @if (vibe)
+  {
+    <script src="~/landing/main.js" asp-append-version="true"></script>
+  }
   @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

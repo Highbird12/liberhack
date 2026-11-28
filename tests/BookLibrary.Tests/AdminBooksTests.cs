@@ -41,7 +41,7 @@ public class AdminBooksTests(AppFactory app) : IClassFixture<AppFactory>
         Assert.False(book.Hidden);
         Assert.True(app.Storage.Files.ContainsKey(book.CoverUrl!));
         Assert.True(app.Storage.Files.ContainsKey(book.EnglishPdf!));
-        Assert.Contains("Added With Files", await app.NewBrowser().PageAsync("/"));
+        Assert.Contains("Added With Files", await app.NewBrowser().PageAsync("/Library"));
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class AdminBooksTests(AppFactory app) : IClassFixture<AppFactory>
         Assert.NotEqual(before.CoverUrl, after.CoverUrl);
         Assert.False(app.Storage.Files.ContainsKey(before.CoverUrl!));
         Assert.True(app.Storage.Files.ContainsKey(after.CoverUrl!));
-        Assert.DoesNotContain("Edited Title", await app.NewBrowser().PageAsync("/"));
+        Assert.DoesNotContain("Edited Title", await app.NewBrowser().PageAsync("/Library"));
     }
 
     [Fact]

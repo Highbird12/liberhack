@@ -1,0 +1,156 @@
+/* Bookshelf page (Views/Home/Shelf.cshtml), in the landing page's look. Loaded after landing/styles.css,
+   which provides the black page, the video, the shared header and the fonts (--font-sans, --font-display). */
+
+.shelf-page {
+  --H: min(46vh, 31vw);
+  --sheet: #050506;
+  --soft: #d0d0d0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* :where() keeps this reset weak, so the shared header's buttons (menu, Log out) keep their own styles */
+:where(.shelf-page) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; }
+/* Normal mouse arrow; a pointing hand where a click does something */
+.shelf.on-cover, .tape, .play, .arrow, .d-close { cursor: pointer; }
+.probe { position: fixed; left: -9999px; top: 0; width: 1px; height: var(--H); visibility: hidden; pointer-events: none; }
+
+/* Shared header, fixed at the top above the shelf (z-index 45: above the shelf, below the detail sheet) */
+.shelf-top {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 45;
+  padding: clamp(16px, 2.4vh, 28px) clamp(14px, 3vw, 32px);
+}
+
+/* Shelf */
+.shelf { position: fixed; left: 0; right: 0; top: calc(50% - var(--H) / 2 - 40px); height: calc(var(--H) + 80px); perspective: 2200px; perspective-origin: 50% 50%; touch-action: pan-y; z-index: 10; }
+.stage { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; }
+.tape { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-style: preserve-3d; will-change: transform; }
+.face { position: absolute; top: calc(var(--H) / -2); height: var(--H); backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 2px; background-repeat: no-repeat; }
+.face::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: #000; opacity: var(--shade, 0); pointer-events: none; }
+.sp { width: var(--ws); left: calc(var(--ws) / -2); transform: translateZ(calc(var(--d) / 2)); }
+.cv {
+  width: var(--d);
+  left: calc(var(--d) / -2);
+  transform: rotateY(90deg) translateZ(calc(var(--ws) / 2));
+  /* on black: a deep shadow plus a faint light edge and glow, like the home page's button */
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 60px rgba(255, 255, 255, 0.06);
+}
+
+/* Library books: the cover is their uploaded image, filling the face (the face takes the cover's proportions) */
+.cv.photo { background-color: #1a1a1c; background-size: cover; background-position: center; }
+
+/* Library books: a spine made from the cover. --spine (colour of the cover's left edge) and --spine-ink are set per book
+   by shelf.js. The gradient gives the spine a rounded, lit-from-the-front look. */
+.sp.gen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--ws) * 0.22);
+  padding: calc(var(--ws) * 0.55) 0 calc(var(--ws) * 0.4);
+  overflow: hidden;
+  color: var(--spine-ink, #f4f2ed);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.38), rgba(255, 255, 255, 0.1) 28%, rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.42)),
+    var(--spine, #2a2a2e);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.sp.gen .sp-title,
+.sp.gen .sp-author {
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sp.gen .sp-title {
+  flex: 1 1 auto;
+  min-height: 0;
+  font: 600 calc(var(--ws) * var(--fit, 0.25)) / 1 var(--font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sp.gen .sp-author {
+  flex: 0 1 auto;
+  max-height: 34%;
+  font: 500 calc(var(--ws) * var(--fit, 0.17)) / 1 var(--font-sans);
+  opacity: 0.75;
+}
+.sp.gen .sp-mark {
+  flex: none;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff url("/landing/assets/logo.webp") center / 72% no-repeat;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* Play ring */
+.play {
+  position: fixed; left: 0; top: 0; width: 42px; height: 42px; margin: -21px 0 0 -21px;
+  border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 50%;
+  color: #fff; background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; z-index: 25; transform: scale(0);
+}
+.play svg { width: 12px; height: 12px; margin-left: 2px; display: block; }
+
+/* Caption: title in the dot-matrix font, like the home page headline */
+.cap { position: fixed; left: 50%; top: calc(50% + var(--H) / 2 + 30px); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none; z-index: 20; }
+.cap .mask { position: relative; overflow: hidden; width: min(92vw, 760px); text-align: center; }
+.mask > span { display: block; }
+.mask > span:not(:first-child) { position: absolute; left: 0; right: 0; top: 0; }
+.c-title { font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 3vw, 38px); line-height: 1.12; letter-spacing: -0.04em; color: #fff; }
+.c-sub { font: 500 13px / 1.2 var(--font-sans); color: var(--pill-text); }
+.c-year { font: 500 12px / 1 var(--font-sans); letter-spacing: 0.04em; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Arrows (only shown when the shelf holds more than one book) */
+.arrow { position: fixed; top: calc(50% + var(--H) / 2 + 40px); width: 44px; height: 44px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; z-index: 20; color: #fff; }
+.arrow[hidden] { display: none; }
+.arrow svg { width: 18px; height: 10px; display: block; overflow: visible; }
+.arrow.prev { left: 20px; } .arrow.next { right: 20px; }
+
+/* Detail sheet: dark */
+.detail {
+  position: fixed; inset: 0; z-index: 60; background: var(--sheet); color: #fff; visibility: hidden;
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 4vw; padding: 110px 6vw 56px 7vw;
+  background-image: radial-gradient(900px 500px at 75% 50%, rgba(255, 255, 255, 0.05), transparent 70%);
+}
+.shelf-page .d-close {
+  position: absolute; left: clamp(14px, 3vw, 32px); top: clamp(16px, 2.4vh, 28px); z-index: 2;
+  display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 999px;
+  background: var(--pill-dark); color: var(--sign-in-text); font: 500 14px / 1 var(--font-sans);
+  box-shadow: var(--nav-shadow); transition: background-color 0.25s ease, color 0.25s ease;
+}
+.shelf-page .d-close:hover { background: #323234; color: #fff; }
+.d-logo { position: absolute; left: 0; right: 0; top: clamp(16px, 2.4vh, 28px); display: flex; justify-content: center; pointer-events: none; }
+.d-text { align-self: center; max-width: 520px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.d-text .m { overflow: hidden; max-width: 100%; }
+.d-text .m > span { display: block; }
+.d-sub {
+  display: inline-flex !important; align-items: center; height: 34px; padding: 0 16px;
+  border: 1px solid var(--pill-border); border-radius: 999px; background: var(--pill-dark);
+  color: var(--pill-text); font: 500 13px / 1 var(--font-sans);
+}
+.d-title { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 5.2vw, 80px); line-height: 1.08; letter-spacing: -0.04em; padding-bottom: 0.06em; }
+.d-meta { font: 500 13px / 1 var(--font-sans); letter-spacing: 0.02em; color: var(--muted); }
+.d-syn { font: 400 17px / 1.55 var(--font-sans); color: var(--soft); opacity: 0.8; max-width: 42ch; margin: 0;
+  /* library summaries can be long: show the first lines, the book page has the rest */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; line-clamp: 7; overflow: hidden; }
+.d-credit { font: 400 14px / 1.4 var(--font-sans); color: var(--muted); }
+.d-text .m.w { margin-top: 10px; padding: 6px 30px 30px 6px; margin-left: -6px; } /* room for the button's glow inside the mask */
+.d-poster { align-self: center; justify-self: center; height: min(100%, 78vh); aspect-ratio: 474 / 900; max-width: 100%; filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.8)); }
+.d-poster svg { display: block; width: 100%; height: 100%; }
+
+/* Phones */
+@media (max-width: 720px) {
+  .shelf-page { --H: min(60vw, 40svh); }
+  .c-title { font-size: 24px; letter-spacing: -0.08em; }
+  .arrow.prev { left: 6px; } .arrow.next { right: 6px; }
+  .detail { grid-template-columns: 1fr; grid-template-rows: auto; align-content: start; overflow-y: auto; padding: 92px 22px 40px; gap: 24px; }
+  .d-poster { order: -1; height: 46svh; }
+  .d-title { font-size: 40px; letter-spacing: -0.08em; }
+  .d-syn { font-size: 16px; }
+}
+
