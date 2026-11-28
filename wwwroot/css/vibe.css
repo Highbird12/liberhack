@@ -1,0 +1,178 @@
+/* Dark look of the landing page, for pages that set ViewData["Vibe"] = true (the library).
+   Everything is scoped to body.vibe so other pages keep site.css. Loaded after site.css and landing/styles.css. */
+
+body.vibe {
+  --gold: #c9a961;              /* from the logo */
+  --surface: #0d0d0f;
+  --surface-2: #151517;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --ink: #ffffff;
+  --accent: #ffffff;
+  --accent-hover: #d0d0d0;
+  background: #000 !important;
+  background-image: radial-gradient(1200px 520px at 50% -180px, rgba(255, 255, 255, 0.07), transparent 70%) !important;
+  background-repeat: no-repeat !important;
+  color: #d0d0d0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.vibe-top {
+  padding: clamp(16px, 2.4vh, 28px) clamp(14px, 3vw, 32px);
+  margin-bottom: clamp(18px, 4vh, 40px);
+}
+
+/* Headings */
+body.vibe h1, body.vibe h2, body.vibe h3, body.vibe h4 { color: #fff; }
+body.vibe h1 {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin: 0;
+}
+body.vibe h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+body.vibe .library-head { margin-bottom: clamp(20px, 3vh, 32px) !important; }
+
+/* Links and muted text (page content only; the header keeps its own colours) */
+body.vibe main a { color: #fff; }
+body.vibe main a:hover { color: var(--accent-hover); }
+body.vibe .text-muted { color: var(--muted) !important; }
+
+/* Buttons: white glowing pill (primary), dark pills (others) */
+body.vibe .btn {
+  border-radius: 999px;
+  padding: 10px 20px;
+  font: 500 14px / 1.2 var(--font-sans);
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), background-color 0.25s ease, color 0.25s ease;
+}
+body.vibe .btn-primary {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15), 0 0 22px rgba(255, 255, 255, 0.22), 0 0 44px rgba(255, 255, 255, 0.08);
+}
+body.vibe .btn-primary:hover, body.vibe .btn-primary:focus-visible {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.4), 0 0 60px rgba(255, 255, 255, 0.15);
+}
+body.vibe .btn-outline-secondary, body.vibe .btn-warning {
+  background: var(--pill-dark);
+  border: 1px solid var(--line-strong);
+  color: var(--sign-in-text);
+}
+body.vibe .btn-outline-secondary:hover, body.vibe .btn-warning:hover {
+  background: #323234;
+  border-color: var(--pill-border);
+  color: #fff;
+  transform: translateY(-1px);
+}
+body.vibe .btn-warning { color: var(--gold); }
+
+/* Search: pill inputs */
+body.vibe .form-control, body.vibe .form-select {
+  height: 46px;
+  padding: 0 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background-color: var(--surface-2);
+  color: #fff;
+  font-family: var(--font-sans);
+}
+body.vibe .form-select { padding-right: 44px; background-position: right 18px center; }
+body.vibe .form-control::placeholder { color: var(--muted); }
+body.vibe .form-control:focus, body.vibe .form-select:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: var(--surface-2);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+body.vibe form[role="search"] .btn { height: 46px; }
+
+/* Nationality groups: dark rounded panels */
+body.vibe .accordion { --bs-accordion-bg: transparent; --bs-accordion-border-color: transparent; }
+body.vibe .accordion-item {
+  margin-bottom: 12px;
+  border: 1px solid var(--line) !important;
+  border-radius: 20px !important;
+  background: var(--surface);
+  overflow: hidden;
+}
+body.vibe .accordion-button {
+  padding: 18px 22px;
+  background: transparent;
+  color: #fff;
+  font: 500 17px / 1.3 var(--font-sans);
+  letter-spacing: -0.01em;
+}
+body.vibe .accordion-button:not(.collapsed) { background: transparent; color: #fff; }
+body.vibe .accordion-button:hover { background: rgba(255, 255, 255, 0.03); }
+body.vibe .accordion-button::after { filter: grayscale(1) brightness(2.2); }
+body.vibe .accordion-body { padding: 4px 22px 22px; }
+
+/* Book cards */
+body.vibe .book-card { color: #fff; }
+body.vibe .book-card .fw-semibold { color: #fff; font-family: var(--font-sans); font-weight: 500 !important; margin-top: 10px !important; }
+body.vibe .book-card small { color: var(--muted) !important; }
+body.vibe .book-card:hover .fw-semibold { color: #fff; }
+body.vibe .cover {
+  border-radius: 14px !important;
+  background: var(--pill-dark) !important;
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out);
+}
+body.vibe a:hover .cover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+body.vibe div.cover { color: #fff; font-family: var(--font-display); font-weight: 400; font-size: 18px; letter-spacing: -0.03em; }
+
+/* Collection heading */
+body.vibe .collection-heading h2 { font-size: clamp(24px, 3.4vw, 34px); }
+
+/* World map: dark panel, gold countries */
+body.vibe .literary-map-section {
+  --map-border: var(--line);
+  --map-country-empty: #1c1c1f;
+  --map-country-line: #3a3a40;
+  --map-country-with-books: #8f7a48;
+  --map-hover-line: #d0d0d0;
+  --map-selected-fill: var(--gold);
+  --map-selected-line: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+body.vibe .literary-map-header p, body.vibe .literary-map-status { color: var(--muted); }
+body.vibe .literary-map-canvas, body.vibe .literary-map-canvas.leaflet-container {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #050506;
+}
+body.vibe .literary-map-section .leaflet-control-zoom { border: 1px solid var(--line-strong); border-radius: 12px; overflow: hidden; }
+body.vibe .literary-map-section .leaflet-control-zoom a,
+body.vibe .literary-map-section .leaflet-tooltip {
+  color: #fff;
+  background: var(--pill-dark);
+  border-color: var(--line);
+}
+body.vibe .literary-map-section .leaflet-control-attribution { background: rgba(0, 0, 0, 0.6); color: var(--muted); }
+body.vibe .literary-map-section .leaflet-control-attribution a { color: #d0d0d0; }
+body.vibe .literary-map-section .form-label { color: #d0d0d0; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.vibe .btn, body.vibe .cover { transition: none; }
+}

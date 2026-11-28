@@ -147,6 +147,11 @@
         picker.disabled = options.size === 0;
     }
 
+    // Map colours come from CSS variables on the map section (--map-*), so a page theme can change them.
+    // The values after || are the defaults.
+    const css = name => getComputedStyle(section).getPropertyValue(name).trim();
+    const colour = (name, fallback) => css(name) || fallback;
+
     function selectCountry(key) {
         const entry = options.get(key);
         const layer = countryLayers.get(key);
@@ -154,7 +159,7 @@
         if (selectedLayer) selectedLayer.setStyle(countryStyle(selectedLayer.feature));
         selectedLayer = layer;
         if (layer) {
-            layer.setStyle({ color: '#394c2f', weight: 2, fillColor: '#76855f', fillOpacity: 0.95 });
+            layer.setStyle({ color: colour('--map-selected-line', '#394c2f'), weight: 2, fillColor: colour('--map-selected-fill', '#76855f'), fillOpacity: 0.95 });
             layer.bringToFront();
         }
 
@@ -184,9 +189,9 @@
     function countryStyle(feature) {
         const hasBooks = options.get(feature.properties.adm0_a3).cards.length > 0;
         return {
-            color: '#a49f90',
+            color: colour('--map-country-line', '#a49f90'),
             weight: 0.8,
-            fillColor: hasBooks ? '#81936b' : '#e3dccb',
+            fillColor: hasBooks ? colour('--map-country-with-books', '#81936b') : colour('--map-country-empty', '#e3dccb'),
             fillOpacity: 0.9
         };
     }
@@ -216,7 +221,7 @@
                 countryLayers.set(code, layer);
                 layer.on({
                     mouseover() {
-                        if (layer !== selectedLayer) layer.setStyle({ color: '#5b694c', weight: 1.6 });
+                        if (layer !== selectedLayer) layer.setStyle({ color: colour('--map-hover-line', '#5b694c'), weight: 1.6 });
                     },
                     mouseout() {
                         if (layer !== selectedLayer) layer.setStyle(countryStyle(feature));

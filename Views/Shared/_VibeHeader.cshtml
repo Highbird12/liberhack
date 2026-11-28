@@ -1,0 +1,70 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@*
+  Header of the landing page and the dark library (styles: wwwroot/landing/styles.css, menu: wwwroot/landing/main.js).
+  ViewData["Nav"] names the active link: "home", "library" or "mine".
+*@
+@{
+  var active = ViewData["Nav"] as string;
+  var signedIn = SignInManager.IsSignedIn(User);
+  string Active(string name) => name == active ? "active" : "";
+  string? Current(string name) => name == active ? "page" : null;
+}
+<header class="vh">
+  <a class="vh-logo" href="/" aria-label="Book Library home"><img src="/landing/assets/logo.webp" alt="" width="52" height="52" /></a>
+
+  <nav class="vh-nav" aria-label="Main">
+    <a class="@Active("home")" aria-current="@Current("home")" href="/">Home</a>
+    <a class="@Active("library")" aria-current="@Current("library")" href="/Library">Library</a>
+    <a asp-controller="Home" asp-action="Shelf">Bookshelf</a>
+    @if (signedIn)
+    {
+      <a class="@Active("mine")" aria-current="@Current("mine")" asp-controller="Books" asp-action="Mine">My translations</a>
+    }
+  </nav>
+
+  <div class="vh-signin-wrap">
+    @if (signedIn)
+    {
+      <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/">
+        <button type="submit" class="vh-signin">Log out</button>
+      </form>
+    }
+    else
+    {
+      <a class="vh-signin" asp-area="Identity" asp-page="/Account/Login">Sign in</a>
+    }
+  </div>
+
+  <button class="vh-burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="vh-menu">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<div class="vh-overlay" hidden></div>
+<nav class="vh-menu" id="vh-menu" aria-label="Menu" hidden>
+  <a class="@Active("home")" aria-current="@Current("home")" href="/">Home</a>
+  <a class="@Active("library")" aria-current="@Current("library")" href="/Library">Library</a>
+  <a asp-controller="Home" asp-action="Shelf">Bookshelf</a>
+  @if (signedIn)
+  {
+    <a class="@Active("mine")" aria-current="@Current("mine")" asp-controller="Books" asp-action="Mine">My translations</a>
+    <a asp-area="Identity" asp-page="/Account/Manage/Index">Account</a>
+  }
+  @if (User.IsInRole("Admin"))
+  {
+    <a asp-controller="AdminBooks" asp-action="Index">Manage books</a>
+    <a asp-controller="AdminUsers" asp-action="Index">Users</a>
+    <a asp-controller="Admin" asp-action="Index">Translation requests</a>
+  }
+  @if (signedIn)
+  {
+    <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/">
+      <button type="submit" class="vh-menu-signin">Log out</button>
+    </form>
+  }
+  else
+  {
+    <a class="vh-menu-signin" asp-area="Identity" asp-page="/Account/Login">Sign in</a>
+  }
+</nav>

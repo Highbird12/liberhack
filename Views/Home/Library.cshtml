@@ -1,0 +1,120 @@
+@model List<IGrouping<string, BookLibrary.Models.Book>>
+@{
+  ViewData["Title"] = "Library";
+  ViewData["Vibe"] = true;      // dark look, see css/vibe.css
+  ViewData["Nav"] = "library";
+  var q = ViewBag.Q as string;
+  var selectedNationality = ViewBag.Nationality as string;
+  var nationalities = ViewBag.Nationalities as List<string> ?? new List<string>();
+  var filtering = !string.IsNullOrEmpty(q) || !string.IsNullOrEmpty(selectedNationality);
+  var found = Model.Sum(g => g.Count());
+}
+<style>
+  .cover { height: 240px; display: flex; align-items: center; justify-content: center; text-align: center;
+           padding: 12px; color: #fff; font-weight: 600; border-radius: .5rem; background: #3b4a6b; }
+  img.cover { object-fit: cover; width: 100%; padding: 0; }
+</style>
+<div class="library-head d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <h1>Library</h1>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-primary" asp-controller="Home" asp-action="Shelf">View the bookshelf</a>
+    @if (User.IsInRole("Admin"))
+    {
+      <a class="btn btn-outline-secondary" asp-controller="AdminBooks" asp-action="Index">Manage books</a>
+      <a class="btn btn-outline-secondary" asp-controller="AdminUsers" asp-action="Index">Users</a>
+      <a class="btn btn-warning" asp-controller="Admin" asp-action="Index">Translation requests</a>
+    }
+  </div>
+</div>
+<form method="get" asp-action="Library" class="row g-2 mb-3" role="search">
+  <div class="col-sm-6">
+    <input type="search" name="q" value="@q" class="form-control" placeholder="Search by title or author" aria-label="Search by title or author" />
+  </div>
+  <div class="col-sm-4">
+    <select name="nationality" class="form-select" aria-label="Nationality">
+      <option value="">All nationalities</option>
+      @foreach (var n in nationalities)
+      {
+        <option value="@n" selected="@(string.Equals(n, selectedNationality, StringComparison.OrdinalIgnoreCase))">@n</option>
+      }
+    </select>
+  </div>
+  <div class="col-sm-2 d-grid">
+    <button class="btn btn-primary">Search</button>
+  </div>
+</form>
+@if (filtering)
+{
+  <p class="text-muted">
+    @(found == 0 ? "No books match your search." : found == 1 ? "1 book found." : $"{found} books found.")
+    <a asp-action="Library">Clear search</a>
+  </p>
+}
+else if (found == 0)
+{
+  <p class="text-muted">No books in the library yet.</p>
+}
+<section id="around-the-world" class="literary-map-section" hidden
+         data-boundaries="/data/world-countries.json"
+         data-leaflet-script="/lib/leaflet/leaflet.js"
+         data-leaflet-style="/lib/leaflet/leaflet.css">
+  <div class="literary-map-header">
+    <div>
+      <h2 tabindex="-1">Around the world</h2>
+      <p>Pick a country to see the books in this library from there.</p>
+    </div>
+    <a href="#collection" class="btn btn-outline-secondary">Back to the collection</a>
+  </div>
+  <div class="literary-map-controls">
+    <label class="form-label" for="map-country">Country</label>
+    <select id="map-country" class="form-select">
+      <option value="">Choose a country</option>
+    </select>
+  </div>
+  <p role="status" class="literary-map-status"></p>
+  <div class="literary-map-canvas"></div>
+  <div class="literary-map-results">
+    <h3></h3>
+    <div class="book-grid row row-cols-2 row-cols-md-4 g-3"></div>
+  </div>
+</section>
+
+<section id="collection" class="collection-section" tabindex="-1">
+<div class="collection-heading d-flex justify-content-between align-items-center">
+  <h2>Collection</h2>
+  <a href="#around-the-world">Explore the world map</a>
+</div>
+<div class="accordion" id="natList">
+  @for (int i = 0; i < Model.Count; i++)
+  {
+    var g = Model[i];
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        @* Search results open every group so matches are visible straight away *@
+        <button class="accordion-button @(filtering ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#nat-@i" aria-expanded="@(filtering ? "true" : "false")">@g.Key (@g.Count())</button>
+      </h2>
+      <div id="nat-@i" class="accordion-collapse collapse @(filtering ? "show" : "")" data-bs-parent="@(filtering ? null : "#natList")">
+        <div class="accordion-body">
+          <div class="row row-cols-2 row-cols-md-4 g-3">
+            @foreach (var b in g)
+            {
+              <div class="col">
+                <a asp-controller="Books" asp-action="Details" asp-route-id="@b.Id" class="text-decoration-none text-dark book-card" data-nationality="@b.Nationality">
+                  @if (!string.IsNullOrEmpty(b.CoverUrl)) { <img class="cover" src="@b.CoverUrl" alt="@b.Title" /> }
+                  else { <div class="cover">@b.Title</div> }
+                  <div class="mt-1 fw-semibold">@b.Title</div>
+                  <small class="text-muted">@b.Author@(b.Year is int y ? $", {y}" : "")</small>
+                </a>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+</section>
+
+@section Scripts {
+  <script src="/js/literary-map.js" defer></script>
+}

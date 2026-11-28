@@ -9,7 +9,7 @@ Live at https://book-library-jsmg.onrender.com (Render service `book-library`, a
 
 ## Stack and layout
 - ASP.NET Core MVC on .NET 10 (`net10.0`), ASP.NET Identity, EF Core with PostgreSQL (Npgsql) on Supabase.
-- `Controllers/`: `HomeController` (library, search, the 3D bookshelf page `Shelf`), `BooksController` (book page, submit, My translations),
+- `Controllers/`: `HomeController` (landing page `Index` at `/`, library and search `Library` at `/Library`, the 3D bookshelf page `Shelf`), `BooksController` (book page, submit, My translations),
   `AdminController` (translation review), `AdminBooksController` (book management), `AdminUsersController` (users, admin role, blocking, reset links).
 - `Models/`: `Book` (with `Year`, `Language`, `Hidden`: hidden books are admin-only everywhere), `Translation`, `TranslationStatus` (Pending, Approved, Rejected, Replaced: only add new values at the end), `BookForm`.
 - `Data/`: `ApplicationDbContext`, `DatabaseConfig` (connection string parsing), `SeedData` (migrations, row-level security, admin, sample books), `Migrations/`.
@@ -17,6 +17,7 @@ Live at https://book-library-jsmg.onrender.com (Render service `book-library`, a
 - `Services/LockoutSignInManager.cs`: makes the login count wrong passwords (lockout after 5). `Areas/Identity/Pages/Account/ForgotPassword.cshtml` replaces the built-in page.
 - `tests/BookLibrary.Tests/`: xUnit tests; `AppFactory` starts the app on a throwaway database, `Browser` fills in forms with their anti-forgery token.
 - `Dockerfile`: the image Render builds.
+- Landing page and dark look: `Views/Home/Index.cshtml` + `wwwroot/landing/`, shared header `Views/Shared/_VibeHeader.cshtml`; a page using the site layout turns on the dark look with `ViewData["Vibe"] = true` (`wwwroot/css/vibe.css`, scoped to `body.vibe`).
 
 ## Run and check
 - Build: `dotnet build` (keep it at 0 warnings).

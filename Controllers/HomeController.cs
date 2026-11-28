@@ -11,10 +11,16 @@ public class HomeController : Controller
     private readonly ApplicationDbContext _db;
     public HomeController(ApplicationDbContext db) => _db = db;
 
-    // q searches title and author; nationality filters to one group.
+    // The landing page at "/" (its own full-screen look: Views/Home/Index.cshtml and wwwroot/landing/).
+    // Searches used to live at "/", so old links such as /?q=tolstoy are sent on to the library.
+    public IActionResult Index(string? q, string? nationality) =>
+        q != null || nationality != null ? RedirectToAction(nameof(Library), new { q, nationality }) : View();
+
+    // The library at /Library. q searches title and author; nationality filters to one group.
     // Filtering runs in memory so matching ignores case for Cyrillic too
     // (database LIKE matching depends on the database's collation). Fine for a library of this size.
-    public async Task<IActionResult> Index(string? q, string? nationality)
+    [HttpGet("/Library")]
+    public async Task<IActionResult> Library(string? q, string? nationality)
     {
         var all = await _db.Books.Where(b => !b.Hidden).OrderBy(b => b.Title).ToListAsync();
         q = q?.Trim();

@@ -8,7 +8,7 @@
   var minePending = mine?.Status == TranslationStatus.Pending;
 }
 @if (TempData["Msg"] is string msg) { <div class="alert alert-success">@msg</div> }
-<a asp-controller="Home" asp-action="Index">Back to library</a>
+<a asp-controller="Home" asp-action="Library">Back to library</a>
 <div class="book-details-grid">
   <div class="book-details-cover">
     @if (!string.IsNullOrEmpty(Model.CoverUrl))

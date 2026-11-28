@@ -7,11 +7,20 @@ namespace BookLibrary.Tests;
 public class ShelfTests(AppFactory app) : IClassFixture<AppFactory>
 {
     [Fact]
-    public async Task Home_page_links_to_the_bookshelf_for_visitors()
+    public async Task Landing_page_and_library_link_to_the_bookshelf_for_visitors()
     {
-        var html = await app.NewBrowser().PageAsync("/");
-        Assert.Contains("href=\"/Home/Shelf\"", html);
-        Assert.Contains("View the bookshelf", html);
+        var b = app.NewBrowser();
+        Assert.Contains("href=\"/Home/Shelf\"", await b.PageAsync("/"));
+        var library = await b.PageAsync("/Library");
+        Assert.Contains("href=\"/Home/Shelf\"", library);
+        Assert.Contains("View the bookshelf", library);
+    }
+
+    [Fact]
+    public async Task Bookshelf_links_back_to_the_library()
+    {
+        var html = await app.NewBrowser().PageAsync("/Home/Shelf");
+        Assert.Contains("href=\"/Library\"", html);
     }
 
     [Fact]

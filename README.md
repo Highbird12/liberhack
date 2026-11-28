@@ -5,6 +5,8 @@ ASP.NET Core MVC + Identity + PostgreSQL (Supabase).
 
 A site for reading books and for sending in Bulgarian translations of books that have none. Visitors browse and search the library. Logged-in users submit translations as .docx or PDF files. An admin reviews each one and approves or rejects it, and approved translations are published on the book page. Admins also add, edit and delete books.
 
+**Book Library is open source.** Anyone can read the code, run their own copy and suggest changes through a pull request. The project does not have a licence file yet: until the team adds one (for example MIT), the code is legally "all rights reserved" by default, so choose a licence and add it as `LICENSE` in the repository root.
+
 ## Database
 The app uses PostgreSQL. There is no database address or password in the code. Each person sets the connection string once, with user secrets (stored on your PC, outside the repo). Pick one:
 
@@ -118,8 +120,9 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 ## Features
 
 **Everyone**
-- Library home page: books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included.
-- **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button on the home page): a full-screen 3D shelf. The book turns to show its cover; clicking the cover opens a page about the book that grows out of it. It shows one book for now, The King in Yellow, which is built into `wwwroot/js/shelf.js` (the `BOOKS` list) and is not one of the library's database books. Adding a second book to that list turns on the arrows, scrolling and dragging.
+- **Landing page** (`/`): a full-screen page over a looping background video, with the headline, a short description and a **Browse the library** button. Its header (logo, Home, Library, Bookshelf, My translations when signed in, Sign in / Log out, and a menu button on phones) is shared with the library. Old search links such as `/?q=tolstoy` are sent on to `/Library`.
+- **Library** (`/Library`): books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included. It uses the dark look of the landing page; other pages keep the normal look.
+- **Bookshelf** (`/Home/Shelf`, the **View the bookshelf** button in the library and Bookshelf in the header): a full-screen 3D shelf. The book turns to show its cover; clicking the cover opens a page about the book that grows out of it. It shows one book for now, The King in Yellow, which is built into `wwwroot/js/shelf.js` (the `BOOKS` list) and is not one of the library's database books. Adding a second book to that list turns on the arrows, scrolling and dragging.
 - Book page: author, year, original language, summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
 - Accounts: after 5 wrong passwords in a row an account is locked for 10 minutes. With email set up (see Email), new accounts confirm their email address and "Forgot your password?" emails a reset link; without it, an admin creates reset links.
 
@@ -152,10 +155,10 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 6. The translator follows their submissions on **My translations**: waiting, published, rejected (with the reason) or replaced. After a rejection they can send a new version.
 7. As admin, open **Manage books** and add a book with a cover and a PDF, edit it, then delete it. Tick **Hidden** and check that the book disappears from the library for visitors.
 8. As admin, open **Users**, make someone an admin, block and unblock a user, and create a password reset link.
-9. On the home page click **View the bookshelf**, move the mouse over the cover and click it, then press Close or Escape. Back to library returns to the home page.
+9. Open the landing page (`/`), click **Browse the library**, then **View the bookshelf**. Move the mouse over the cover and click it, then press Close or Escape. Back to library returns to the library. On a phone, open the menu with the round button at the top right.
 
 ## Project layout
-- `Controllers/`: `HomeController` (library and search), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management), `AdminUsersController` (users)
+- `Controllers/`: `HomeController` (landing page, library and search at `/Library`, bookshelf), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management), `AdminUsersController` (users)
 - `Models/`: `Book`, `Translation` and `TranslationStatus` (Pending, Approved, Rejected, Replaced), `BookForm` (admin add/edit form)
 - `Dockerfile`, `.dockerignore`: build and run the app in a container (Render)
 - `Services/FileStorage.cs`: where admin uploads are kept (Supabase Storage or the local folder)
@@ -166,6 +169,7 @@ Without the settings nothing is sent: accounts work without confirmation and "Fo
 - `Views/`: Razor pages for each controller
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
 - `test-files/`: a sample .docx translation
+- `Views/Home/Index.cshtml`, `wwwroot/landing/`: the landing page (styles, menu script, logo, Geist Pixel Circle font with its licence). `Views/Shared/_VibeHeader.cshtml`: its header, also used by the library. `wwwroot/css/vibe.css`: the dark look of the library (a page turns it on with `ViewData["Vibe"] = true`). The headline font BubbledotICG-FinePos and Inter load from OnlineWebFonts and Google Fonts; the background video loads from CloudFront.
 - `Views/Home/Shelf.cshtml`, `wwwroot/css/shelf.css`, `wwwroot/js/shelf.js`, `wwwroot/shelf/`: the bookshelf page, its book image and its self-hosted fonts (Newsreader and Inter Tight, SIL Open Font License, licence texts next to the fonts)
 
 ## Notes
