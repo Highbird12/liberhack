@@ -6,8 +6,9 @@ namespace BookLibrary.Data;
 
 public static class SeedData
 {
-    static Book B(string t, string a, string n, string s, string f) =>
-        new() { Title = t, Author = a, Nationality = n, Summary = s, EnglishPdf = $"/pdfs/{f}.pdf", CoverUrl = $"/covers/{f}.svg" };
+    static Book B(string t, string a, string n, string s, string f, int year, string language) =>
+        new() { Title = t, Author = a, Nationality = n, Summary = s, EnglishPdf = $"/pdfs/{f}.pdf", CoverUrl = $"/covers/{f}.svg",
+                Year = year, Language = language };
 
     public static async Task InitAsync(IServiceProvider sp)
     {
@@ -23,14 +24,14 @@ public static class SeedData
         if (!db.Books.Any())
         {
             db.Books.AddRange(
-                B("Pride and Prejudice", "Jane Austen", "English", "Elizabeth Bennet and the proud Mr. Darcy misjudge each other while her family hunts for suitable marriages.", "pride"),
-                B("Frankenstein", "Mary Shelley", "English", "A young scientist builds a living creature, then abandons it and faces the consequences.", "frankenstein"),
-                B("Dracula", "Bram Stoker", "Irish", "A group of friends hunts the Transylvanian count who is preying on England.", "dracula"),
-                B("Crime and Punishment", "Fyodor Dostoevsky", "Russian", "A poor student commits a murder and is consumed by guilt in St. Petersburg.", "crime"),
-                B("Anna Karenina", "Leo Tolstoy", "Russian", "A married noblewoman's affair unravels her life while a landowner searches for meaning.", "anna"),
-                B("Les Misérables", "Victor Hugo", "French", "Ex-convict Jean Valjean tries to rebuild his life while being pursued by an inspector.", "miserables"),
-                B("Around the World in 80 Days", "Jules Verne", "French", "Phileas Fogg bets he can circle the globe in eighty days.", "eighty-days"),
-                B("Moby-Dick", "Herman Melville", "American", "Captain Ahab's obsessive hunt for a white whale drives his crew to disaster.", "moby"));
+                B("Pride and Prejudice", "Jane Austen", "English", "Elizabeth Bennet and the proud Mr. Darcy misjudge each other while her family hunts for suitable marriages.", "pride", 1813, "English"),
+                B("Frankenstein", "Mary Shelley", "English", "A young scientist builds a living creature, then abandons it and faces the consequences.", "frankenstein", 1818, "English"),
+                B("Dracula", "Bram Stoker", "Irish", "A group of friends hunts the Transylvanian count who is preying on England.", "dracula", 1897, "English"),
+                B("Crime and Punishment", "Fyodor Dostoevsky", "Russian", "A poor student commits a murder and is consumed by guilt in St. Petersburg.", "crime", 1866, "Russian"),
+                B("Anna Karenina", "Leo Tolstoy", "Russian", "A married noblewoman's affair unravels her life while a landowner searches for meaning.", "anna", 1878, "Russian"),
+                B("Les Misérables", "Victor Hugo", "French", "Ex-convict Jean Valjean tries to rebuild his life while being pursued by an inspector.", "miserables", 1862, "French"),
+                B("Around the World in 80 Days", "Jules Verne", "French", "Phileas Fogg bets he can circle the globe in eighty days.", "eighty-days", 1872, "French"),
+                B("Moby-Dick", "Herman Melville", "American", "Captain Ahab's obsessive hunt for a white whale drives his crew to disaster.", "moby", 1851, "English"));
             await db.SaveChangesAsync();
         }
     }

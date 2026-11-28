@@ -5,6 +5,7 @@
 .github/
 app.db*
 wwwroot/uploads/
+tests/
 **/*.user
 Dockerfile
 .dockerignore

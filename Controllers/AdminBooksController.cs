@@ -76,6 +76,9 @@ public class AdminBooksController : Controller
             Author = book.Author,
             Nationality = book.Nationality,
             Summary = book.Summary,
+            Year = book.Year,
+            Language = book.Language,
+            Hidden = book.Hidden,
             CurrentCoverUrl = book.CoverUrl,
             CurrentPdf = book.EnglishPdf,
         });
@@ -159,6 +162,9 @@ public class AdminBooksController : Controller
         book.Author = form.Author.Trim();
         book.Nationality = form.Nationality.Trim();
         book.Summary = form.Summary?.Trim() ?? "";
+        book.Year = form.Year;
+        book.Language = string.IsNullOrWhiteSpace(form.Language) ? null : form.Language.Trim();
+        book.Hidden = form.Hidden;
     }
 
     void ValidateFiles(BookForm form)

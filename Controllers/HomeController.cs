@@ -16,7 +16,7 @@ public class HomeController : Controller
     // (database LIKE matching depends on the database's collation). Fine for a library of this size.
     public async Task<IActionResult> Index(string? q, string? nationality)
     {
-        var all = await _db.Books.OrderBy(b => b.Title).ToListAsync();
+        var all = await _db.Books.Where(b => !b.Hidden).OrderBy(b => b.Title).ToListAsync();
         q = q?.Trim();
         nationality = nationality?.Trim();
 

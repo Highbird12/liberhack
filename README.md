@@ -99,7 +99,8 @@ On your PC set them with `dotnet user-secrets set "Storage:Supabase:Url" "..."` 
 
 **Everyone**
 - Library home page: books grouped by nationality, with covers. Search by title or author and filter by nationality. Matching ignores case, Cyrillic included.
-- Book page: summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
+- Book page: author, year, original language, summary, **Read in English** (PDF, shown only if the book has one), and **Read in Bulgarian** once a translation is approved.
+- Accounts: after 5 wrong passwords in a row an account is locked for 10 minutes. "Forgot your password?" explains that an admin can send a reset link (the site cannot send email).
 
 **Logged-in users**
 - **Translate to Bulgarian**: upload a .docx or a text-based PDF.
@@ -111,10 +112,15 @@ On your PC set them with `dotnet user-secrets set "Storage:Supabase:Url" "..."` 
   - A translation is decided only once; deciding it again (double click, second tab, back button) changes nothing.
   - Only one approved translation per book. Approving a new one replaces the old one, and the review page warns before doing so.
 - **Manage books**: add, edit and delete books.
-  - Fields: title, author, nationality (suggests existing ones), summary.
+  - Fields: title, author, nationality (suggests existing ones), year first published, original language, summary.
+  - **Hidden**: a hidden book is left out of the library and search, and only admins can open its page. Use it to prepare a book before publishing it.
   - Optional cover image (.png, .jpg, .webp) and English PDF. SVG covers are not accepted because they can contain scripts.
   - Uploads are saved in Supabase Storage (or `wwwroot/uploads/` without it, see Uploads) under random names. PDFs must start with the `%PDF` header. Replaced or deleted uploads are removed from disk. The seeded files in `wwwroot/covers` and `wwwroot/pdfs` are never deleted.
   - Deleting a book also deletes its translations; the confirmation page says how many.
+- **Users**: search users by email and see their role, status and number of translations.
+  - **Make admin / Remove admin.** You can't remove your own role, the last admin keeps the role, and the admin from the `Admin:Email` setting is protected (it gets the role back on every start).
+  - **Block / Unblock.** A blocked user is logged out within a minute and cannot log in. Admins must lose the role before they can be blocked. **Unblock** also clears a lockout after wrong passwords.
+  - **Password reset link** for a user who forgot their password: copy it and send it to them yourself. It works once and expires after a day.
 
 ## Flow to try
 1. Home: click a nationality to expand it and see covers, click a book. Use the search box to find a book by title or author, or filter by nationality.
@@ -123,13 +129,17 @@ On your PC set them with `dotnet user-secrets set "Storage:Supabase:Url" "..."` 
 4. Log in as admin, open **Translation requests**, read the text, Approve or Reject (optionally with a reason).
 5. After approval the book shows **Read in Bulgarian**. Approving another translation of the same book replaces it.
 6. The translator follows their submissions on **My translations**: waiting, published, rejected (with the reason) or replaced. After a rejection they can send a new version.
-7. As admin, open **Manage books** and add a book with a cover and a PDF, edit it, then delete it.
+7. As admin, open **Manage books** and add a book with a cover and a PDF, edit it, then delete it. Tick **Hidden** and check that the book disappears from the library for visitors.
+8. As admin, open **Users**, make someone an admin, block and unblock a user, and create a password reset link.
 
 ## Project layout
-- `Controllers/`: `HomeController` (library and search), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management)
+- `Controllers/`: `HomeController` (library and search), `BooksController` (book page, submit translation, My translations), `AdminController` (translation review), `AdminBooksController` (book management), `AdminUsersController` (users)
 - `Models/`: `Book`, `Translation` and `TranslationStatus` (Pending, Approved, Rejected, Replaced), `BookForm` (admin add/edit form)
 - `Dockerfile`, `.dockerignore`: build and run the app in a container (Render)
 - `Services/FileStorage.cs`: where admin uploads are kept (Supabase Storage or the local folder)
+- `Services/LockoutSignInManager.cs`: counts wrong passwords so accounts lock after 5
+- `Areas/Identity/Pages/Account/ForgotPassword.cshtml`: replaces the built-in forgot-password page
+- `tests/BookLibrary.Tests/`: automated tests; `.github/workflows/tests.yml` runs them on GitHub
 - `Data/`: `ApplicationDbContext`, `DatabaseConfig` (reads the connection string), `SeedData` (migrations, sample books, admin account), `Migrations/`
 - `Views/`: Razor pages for each controller
 - `wwwroot/`: seeded covers and PDFs, plus `uploads/` (created at run time, not in git)
@@ -141,6 +151,15 @@ On your PC set them with `dotnet user-secrets set "Storage:Supabase:Url" "..."` 
 - Without Supabase Storage settings, uploads go to `wwwroot/uploads/` on the machine that uploaded them; they are not in git and not in the database.
 - **Row-level security is turned on automatically.** Supabase exposes tables in the `public` schema through its Data API, which anyone holding the project's public key can call. On every start the app turns on row-level security (with no policies, which blocks that access) for any table that does not have it yet, including tables added by future migrations, and logs the table names. The app itself is not affected because it connects as the table owner (Supabase's `postgres` user). Do not connect with a different, non-owner database user: row-level security would hide the tables from it. If the connected user may not change the tables, the app logs a warning and starts anyway; then run `ALTER TABLE public."TableName" ENABLE ROW LEVEL SECURITY;` yourself in the SQL Editor.
 - The database is updated with EF Core migrations (in `Data/Migrations`). The app applies any new ones when it starts, so there is no need to reset the database after a model change.
+
+## Tests
+The tests start the real app against a new, empty PostgreSQL database for each group of tests and delete it afterwards, so they never touch the Supabase data. Uploads go to memory.
+
+They need a PostgreSQL server. By default they use `localhost:5432` with user and password `postgres`; for another server set `TEST_DATABASE` to its connection string (without a database name). Then run, in the project folder:
+
+    dotnet test tests/BookLibrary.Tests
+
+GitHub runs them automatically on every pull request and every push to `main` (workflow `.github/workflows/tests.yml`, with its own PostgreSQL). A red mark on a pull request means a test failed: fix it before merging. When you add a feature, add a test for it in `tests/BookLibrary.Tests`.
 
 ## Changing the data model
 After changing a model (for example adding a field to `Book`), create a migration and commit it with your change:
@@ -169,10 +188,12 @@ Items 1 to 7 are merged into `main` (pull request #1). Item 8 is on the branch `
 10. **Container and hosting setup for Render**: `Dockerfile`, the app listens on the host's `PORT`, and trusts the host's HTTPS proxy headers (see Hosting on Render).
 11. **Login keys stored in the database** (`DataProtectionKeys`, migration `DataProtectionKeys`) so logins survive redeploys.
 12. **Uploads in Supabase Storage** (`Services/FileStorage.cs`): covers and PDFs survive redeploys; the bucket is created automatically; the local folder is still used when no storage is configured.
+13. **Book details**: year, original language and a hidden flag (migration `BookDetails`, which also fills these in for the 8 sample books).
+14. **Users page** for admins: make and remove admins, block and unblock, password reset links.
+15. **Account safety**: lockout after 5 wrong passwords, quicker sign-out of blocked users, and an honest forgot-password page.
+16. **Automated tests** (33) and a GitHub workflow that runs them on every pull request.
 
 ## Not done yet
-- Automated tests (everything so far was checked by hand in a browser).
-- More book details such as year, language or a hidden/published flag. Decide with the team first.
-- Email confirmation, password reset by email, and a page for admins to manage users.
+- Email: confirming email addresses and sending password reset emails (needs an email service). Until then admins create reset links on the Users page.
 - Google login is untested.
 - The first commit in git history still contains the old hardcoded admin password. Change that password anywhere it was used.

@@ -20,6 +20,17 @@ public class BookForm
     [StringLength(4000)]
     public string? Summary { get; set; }
 
+    [Display(Name = "Year first published")]
+    [Range(1, 2100, ErrorMessage = "Enter a year between 1 and 2100, or leave it empty.")]
+    public int? Year { get; set; }
+
+    [Display(Name = "Original language")]
+    [StringLength(60)]
+    public string? Language { get; set; }
+
+    [Display(Name = "Hidden (only admins can see this book)")]
+    public bool Hidden { get; set; }
+
     [Display(Name = "Cover image (.png, .jpg, .webp)")]
     public IFormFile? Cover { get; set; }
 

@@ -40,6 +40,12 @@ namespace BookLibrary.Data.Migrations
                     b.Property<string>("EnglishPdf")
                         .HasColumnType("text");
 
+                    b.Property<bool>("Hidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Language")
+                        .HasColumnType("text");
+
                     b.Property<string>("Nationality")
                         .IsRequired()
                         .HasColumnType("text");
@@ -51,6 +57,9 @@ namespace BookLibrary.Data.Migrations
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("Year")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

@@ -32,6 +32,19 @@
     <span asp-validation-for="Nationality" class="text-danger"></span>
   </div>
 
+  <div class="row g-3 mb-3">
+    <div class="col-sm-4">
+      <label asp-for="Year" class="form-label"></label>
+      <input asp-for="Year" class="form-control" inputmode="numeric" />
+      <span asp-validation-for="Year" class="text-danger"></span>
+    </div>
+    <div class="col-sm-8">
+      <label asp-for="Language" class="form-label"></label>
+      <input asp-for="Language" class="form-control" placeholder="e.g. English, Russian, French" />
+      <span asp-validation-for="Language" class="text-danger"></span>
+    </div>
+  </div>
+
   <div class="mb-3">
     <label asp-for="Summary" class="form-label"></label>
     <textarea asp-for="Summary" class="form-control" rows="5"></textarea>
@@ -70,6 +83,12 @@
     <input asp-for="Pdf" type="file" accept=".pdf" class="form-control" />
     @if (isEdit) { <div class="form-text">Leave empty to keep the current PDF.</div> }
     <span asp-validation-for="Pdf" class="text-danger"></span>
+  </div>
+
+  <div class="form-check mb-3">
+    <input asp-for="Hidden" class="form-check-input" />
+    <label asp-for="Hidden" class="form-check-label"></label>
+    <div class="form-text">Use this to prepare a book before visitors can see it. Hidden books are not listed or searchable, and their page is only open to admins.</div>
   </div>
 
   <button class="btn btn-primary">@(isEdit ? "Save changes" : "Add book")</button>
