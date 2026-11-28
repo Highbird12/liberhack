@@ -178,9 +178,9 @@ body.vibe .literary-map-section .form-label { color: #d0d0d0; }
 }
 
 /* ---------- Log in, register and password pages (body.vibe.auth): dark glass cards over the video ---------- */
-/* The video fills the window behind the page and stays put when the page scrolls. */
-body.auth .bg { position: fixed; inset: 0; z-index: -1; }
-body.auth .vibe-top { position: relative; z-index: 2; }
+/* The video (log in pages, My translations) fills the window behind the page and stays put when the page scrolls. */
+body.video .bg { position: fixed; inset: 0; z-index: -1; }
+body.video .vibe-top { position: relative; z-index: 2; }
 body.auth main.container { max-width: 520px; padding-top: 0; }
 body.auth main h1 { text-align: center; font-size: clamp(34px, 5vw, 52px); margin-bottom: 24px; }
 
@@ -245,3 +245,41 @@ body.auth main section:has(> h3):not(:has(button[name="provider"])) { display: n
 @media (max-width: 575px) {
   body.auth main section { padding: 22px 18px; }
 }
+
+/* Floating labels: Bootstrap 5.3 paints a box in the page colour behind a raised label; on these fields that box shows
+   as a dark patch, so it is made see-through. */
+body.vibe .form-floating > label::after { background-color: transparent !important; }
+
+/* Browser autofill (Chrome paints remembered emails pale blue): keep the field dark with white text. */
+body.vibe input:-webkit-autofill,
+body.vibe input:-webkit-autofill:hover,
+body.vibe input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset;
+  box-shadow: 0 0 0 1000px var(--surface-2) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* A dark glass card for page content over the video (My translations) */
+body.vibe .glass {
+  background: rgba(10, 10, 12, 0.74);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  padding: clamp(18px, 3vw, 28px);
+}
+body.vibe .glass p { margin: 0; color: #d0d0d0; }
+body.vibe .glass .table { --bs-table-bg: transparent; margin: 0; color: #d0d0d0; }
+body.vibe .glass .table th { color: var(--muted); font-weight: 500; font-size: 13px; border-color: var(--line-strong); }
+body.vibe .glass .table td { border-color: var(--line); }
+body.vibe .glass .table tr:last-child td { border-bottom: 0; }
+body.vibe .glass .badge { border-radius: 999px; padding: 6px 10px; font-weight: 500; }
+body.vibe .btn-outline-primary {
+  background: var(--pill-dark);
+  border: 1px solid var(--line-strong);
+  color: var(--sign-in-text);
+}
+body.vibe .btn-outline-primary:hover { background: #323234; border-color: var(--pill-border); color: #fff; }
+body.vibe main > h1 + .glass { margin-top: clamp(18px, 3vh, 28px); }

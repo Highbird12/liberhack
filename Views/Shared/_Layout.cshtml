@@ -14,6 +14,10 @@
   var isAuth = ViewContext.RouteData.Values["area"] as string == "Identity"
                && authPages.Contains(ViewContext.RouteData.Values["page"] as string);
   if (isAuth) vibe = true;
+
+  // The landing page's looping video behind the page: the log in pages, and any page that sets ViewData["Video"] = true.
+  var video = isAuth || ViewData["Video"] as bool? == true;
+  var bodyClass = string.Join(" ", new[] { vibe ? "vibe" : null, isAuth ? "auth" : null, video ? "video" : null }.Where(c => c != null));
 }
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="@(vibe ? "dark" : "light")">
@@ -34,8 +38,8 @@
     <link href="~/css/vibe.css" rel="stylesheet" asp-append-version="true" />
   }
 </head>
-<body class="@(isAuth ? "vibe auth" : vibe ? "vibe" : null)">
-  @if (isAuth)
+<body class="@(bodyClass.Length > 0 ? bodyClass : null)">
+  @if (video)
   {
     <div class="bg" aria-hidden="true">
       <video class="bg-video" autoplay muted loop playsinline>

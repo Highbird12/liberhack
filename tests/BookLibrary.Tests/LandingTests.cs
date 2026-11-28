@@ -85,7 +85,7 @@ public class LandingTests(AppFactory app) : IClassFixture<AppFactory>
     public async Task Log_in_register_and_password_pages_use_the_home_page_look_and_video(string url)
     {
         var html = await app.NewBrowser().PageAsync(url);
-        Assert.Contains("<body class=\"vibe auth\">", html);
+        Assert.Contains("<body class=\"vibe auth video\">", html);
         Assert.Contains("data-bs-theme=\"dark\"", html);
         Assert.Contains("hf_20260809_012548_ef22562c-c0ae-4816-ad9d-f8922af4e6a7.mp4", html);   // same background video
         Assert.Contains("class=\"vh-nav\"", html);                                              // same header
@@ -111,6 +111,25 @@ public class LandingTests(AppFactory app) : IClassFixture<AppFactory>
     {
         var html = await app.NewBrowser().PageAsync("/Identity/Account/Login");
         Assert.DoesNotContain("name=\"provider\"", html);
+    }
+
+    [Fact]
+    public async Task My_translations_uses_the_home_page_look_and_video()
+    {
+        var user = await app.NewUserAsync("mine-look@test.local");
+        var html = await user.PageAsync("/Books/Mine");
+        Assert.Contains("<body class=\"vibe video\">", html);
+        Assert.Contains("hf_20260809_012548_ef22562c-c0ae-4816-ad9d-f8922af4e6a7.mp4", html);
+        Assert.Contains("class=\"glass\"", html);
+        Assert.Contains("class=\"active\" aria-current=\"page\" href=\"/Books/Mine\"", html);   // My translations is the active link
+    }
+
+    [Fact]
+    public async Task Library_has_the_dark_look_but_no_video()
+    {
+        var html = await app.NewBrowser().PageAsync("/Library");
+        Assert.Contains("<body class=\"vibe\">", html);
+        Assert.DoesNotContain("<video", html);
     }
 
     [Fact]
