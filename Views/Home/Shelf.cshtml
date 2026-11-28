@@ -1,0 +1,84 @@
+@{
+  // A full-screen page with its own look, so it does not use the site layout.
+  Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bookshelf - Book Library</title>
+  <link rel="preload" href="/shelf/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/shelf/fonts/inter-tight.woff2" as="font" type="font/woff2" crossorigin />
+  <link href="~/css/shelf.css" rel="stylesheet" asp-append-version="true" />
+</head>
+<body>
+  <div class="probe" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="back lbl box" asp-controller="Home" asp-action="Index">Back to library</a>
+    <div class="logo"><span class="name">Book Library</span><span class="tag">Bookshelf</span></div>
+    <div class="count lbl">1 book</div>
+  </header>
+
+  <section class="shelf" aria-label="Bookshelf"><div class="stage"></div></section>
+
+  <button class="play" aria-label="Open book"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 0 L12 6 L1 12 Z" fill="currentColor" /></svg></button>
+
+  <div class="cap" aria-live="polite">
+    <div class="mask"><span class="c-title"></span></div>
+    <div class="mask"><span class="c-sub lbl"></span></div>
+    <div class="mask"><span class="c-year"></span></div>
+  </div>
+
+  <button class="arrow prev" aria-label="Previous book"><svg viewBox="0 0 18 10" aria-hidden="true"><path d="M5 1 L1 5 L5 9 M1 5 L17 5" fill="none" stroke="currentColor" stroke-width="1.2" /></svg></button>
+  <button class="arrow next" aria-label="Next book"><svg viewBox="0 0 18 10" aria-hidden="true"><path d="M13 1 L17 5 L13 9 M17 5 L1 5" fill="none" stroke="currentColor" stroke-width="1.2" /></svg></button>
+
+  <footer class="foot">
+    <span class="lbl">Book Library</span>
+    <a class="lbl" asp-controller="Home" asp-action="Index">All books</a>
+  </footer>
+
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="detail" role="dialog" aria-modal="true" aria-label="Book details" aria-hidden="true">
+    <button class="d-close lbl box">Close</button>
+    <div class="d-logo"><div class="logo"><span class="name">Book Library</span><span class="tag">Bookshelf</span></div></div>
+    <div class="d-text">
+      <div class="m"><span class="d-sub lbl"></span></div>
+      <div class="m"><span class="d-title"></span></div>
+      <div class="m"><span class="d-meta lbl"></span></div>
+      <div class="m"><span><p class="d-syn"></p></span></div>
+      <div class="m"><span class="d-credit"></span></div>
+      <div class="m w"><span><a class="cta lbl" asp-controller="Home" asp-action="Index">Browse the library</a></span></div>
+    </div>
+    <div class="d-poster">
+      <svg viewBox="0 0 474 900" aria-hidden="true">
+        <defs>
+          <clipPath id="pclip"><rect width="474" height="900" /></clipPath>
+          <filter id="inkf" filterUnits="userSpaceOnUse" x="-200" y="-200" width="874" height="1300">
+            <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="3" seed="7" result="n" />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="120" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+          <mask id="inkm" maskUnits="userSpaceOnUse" x="-200" y="-200" width="874" height="1300">
+            <g filter="url(#inkf)" fill="#fff">
+              <circle cx="150" cy="330" r="0" data-delay="0" />
+              <circle cx="340" cy="600" r="0" data-delay="120" />
+              <circle cx="250" cy="120" r="0" data-delay="220" />
+              <circle cx="90" cy="760" r="0" data-delay="300" />
+              <circle cx="400" cy="250" r="0" data-delay="360" />
+              <circle cx="260" cy="860" r="0" data-delay="420" />
+              <circle cx="230" cy="470" r="0" data-delay="180" />
+            </g>
+          </mask>
+        </defs>
+        <g clip-path="url(#pclip)"><g mask="url(#inkm)"><image class="pimg" preserveAspectRatio="none" /></g></g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="cursor" aria-hidden="true"><div class="ring"></div><div class="dot"></div><div class="clabel">OPEN</div></div>
+
+  <script src="~/js/shelf.js" asp-append-version="true"></script>
+</body>
+</html>
