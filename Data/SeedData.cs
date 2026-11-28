@@ -1,5 +1,7 @@
 using BookLibrary.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace BookLibrary.Data;
 
@@ -11,21 +13,13 @@ public static class SeedData
     public static async Task InitAsync(IServiceProvider sp)
     {
         var db = sp.GetRequiredService<ApplicationDbContext>();
-        await db.Database.EnsureCreatedAsync();
+        await BaselineOldDatabaseAsync(db);
+        await db.Database.MigrateAsync();
 
         var roles = sp.GetRequiredService<RoleManager<IdentityRole>>();
         if (!await roles.RoleExistsAsync("Admin")) await roles.CreateAsync(new IdentityRole("Admin"));
 
-        // Your admin account
-        var adminEmail = "mimimam2015@email.com";               // <-- CHANGE
-        var adminPassword = "12345678M@x";      // <-- CHANGE (upper + lower + digit + symbol)
-        var users = sp.GetRequiredService<UserManager<IdentityUser>>();
-        if (await users.FindByEmailAsync(adminEmail) == null)
-        {
-            var admin = new IdentityUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
-            await users.CreateAsync(admin, adminPassword);
-            await users.AddToRoleAsync(admin, "Admin");
-        }
+        await EnsureAdminAsync(sp);
 
         if (!db.Books.Any())
         {
@@ -40,5 +34,80 @@ public static class SeedData
                 B("Moby-Dick", "Herman Melville", "American", "Captain Ahab's obsessive hunt for a white whale drives his crew to disaster.", "moby"));
             await db.SaveChangesAsync();
         }
+    }
+
+    // Before migrations, the app created app.db with EnsureCreated. Those databases already have
+    // every InitialCreate table but no migration history, so Migrate would fail trying to create
+    // them again. Record InitialCreate as applied so their data is kept and later migrations run.
+    static async Task BaselineOldDatabaseAsync(ApplicationDbContext db)
+    {
+        var conn = db.Database.GetDbConnection();
+        await conn.OpenAsync();
+        try
+        {
+            async Task<bool> TableExists(string name)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = $name";
+                var p = cmd.CreateParameter();
+                p.ParameterName = "$name";
+                p.Value = name;
+                cmd.Parameters.Add(p);
+                return Convert.ToInt64(await cmd.ExecuteScalarAsync()) > 0;
+            }
+
+            if (!await TableExists("Books") || await TableExists("__EFMigrationsHistory")) return;
+
+            var initial = db.Database.GetMigrations().First();
+            using var create = conn.CreateCommand();
+            create.CommandText =
+                "CREATE TABLE \"__EFMigrationsHistory\" (" +
+                "\"MigrationId\" TEXT NOT NULL CONSTRAINT \"PK___EFMigrationsHistory\" PRIMARY KEY, " +
+                "\"ProductVersion\" TEXT NOT NULL); " +
+                "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ($id, $version);";
+            var id = create.CreateParameter(); id.ParameterName = "$id"; id.Value = initial; create.Parameters.Add(id);
+            var ver = create.CreateParameter(); ver.ParameterName = "$version"; ver.Value = ProductInfo.GetVersion(); create.Parameters.Add(ver);
+            await create.ExecuteNonQueryAsync();
+        }
+        finally
+        {
+            await conn.CloseAsync();
+        }
+    }
+
+    // The admin account comes from configuration, never from code:
+    //   Admin:Email and Admin:Password (user secrets in development, environment variables in production).
+    // If the email belongs to an existing account, that account is given the Admin role.
+    // The password is only used when the account is first created; changing it later has no effect.
+    static async Task EnsureAdminAsync(IServiceProvider sp)
+    {
+        var config = sp.GetRequiredService<IConfiguration>();
+        var log = sp.GetRequiredService<ILoggerFactory>().CreateLogger("SeedData");
+        var email = config["Admin:Email"]?.Trim();
+        var password = config["Admin:Password"];
+
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+        {
+            log.LogWarning("No admin account configured. Set Admin:Email and Admin:Password (see README) to create one.");
+            return;
+        }
+
+        var users = sp.GetRequiredService<UserManager<IdentityUser>>();
+        var admin = await users.FindByEmailAsync(email);
+        if (admin == null)
+        {
+            admin = new IdentityUser { UserName = email, Email = email, EmailConfirmed = true };
+            var result = await users.CreateAsync(admin, password);
+            if (!result.Succeeded)
+            {
+                log.LogError("Could not create admin account {Email}: {Errors}",
+                    email, string.Join(" ", result.Errors.Select(e => e.Description)));
+                return;
+            }
+            log.LogInformation("Created admin account {Email}.", email);
+        }
+
+        if (!await users.IsInRoleAsync(admin, "Admin"))
+            await users.AddToRoleAsync(admin, "Admin");
     }
 }

@@ -1,28 +1,85 @@
 @model BookLibrary.Models.Book
 @{
   ViewData["Title"] = Model.Title;
+  // The controller loads approved translations newest first.
   var bg = Model.Translations.FirstOrDefault();
   bool read = ViewBag.Read == true;
+  var mine = ViewBag.Mine as Translation;
+  var minePending = mine?.Status == TranslationStatus.Pending;
 }
 @if (TempData["Msg"] is string msg) { <div class="alert alert-success">@msg</div> }
 <a asp-controller="Home" asp-action="Index">Back to library</a>
-<h1 class="mt-2">@Model.Title</h1>
-<p class="text-muted">@Model.Author, @Model.Nationality</p>
-<p style="max-width:70ch">@Model.Summary</p>
-<div class="mb-4">
-  @if (bg != null)
-  {
-    <a class="btn btn-success" asp-action="Details" asp-route-id="@Model.Id" asp-route-read="true">Read in Bulgarian</a>
-    <a class="btn btn-outline-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
-  }
-  else
-  {
-    <a class="btn btn-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
-    <a class="btn btn-outline-primary" asp-action="Submit" asp-route-id="@Model.Id">Translate to Bulgarian</a>
-  }
+<div class="book-details-grid">
+  <div class="book-details-cover">
+    @if (!string.IsNullOrEmpty(Model.CoverUrl))
+    {
+      <img src="@Model.CoverUrl" alt="Cover of @Model.Title" />
+    }
+    else
+    {
+      <p>Cover unavailable</p>
+    }
+  </div>
+
+  <div class="book-details-content">
+    <h1>@Model.Title</h1>
+    <p class="book-details-byline">@Model.Author, @Model.Nationality</p>
+    <p class="book-details-description">@Model.Summary</p>
+    @if (minePending)
+    {
+      <div class="alert alert-secondary">
+        Your translation of this book is waiting for review. You can follow it on <a asp-action="Mine">My translations</a>.
+      </div>
+    }
+    else if (mine?.Status == TranslationStatus.Rejected && bg == null)
+    {
+      <div class="alert alert-warning">
+        Your translation was not accepted.
+        @if (!string.IsNullOrEmpty(mine.RejectionReason))
+        {
+          <div class="mt-1 book-translation-reason"><strong>Reason:</strong> @mine.RejectionReason</div>
+        }
+        <div class="mt-1">You can fix it and send a new version.</div>
+      </div>
+    }
+    <div class="book-details-actions">
+      @if (bg != null)
+      {
+        <a class="btn btn-success" asp-action="Details" asp-route-id="@Model.Id" asp-route-read="true">Read in Bulgarian</a>
+        @if (!string.IsNullOrEmpty(Model.EnglishPdf))
+        {
+          <a class="btn btn-outline-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+        }
+      }
+      else
+      {
+        @if (!string.IsNullOrEmpty(Model.EnglishPdf))
+        {
+          <a class="btn btn-primary" href="@Model.EnglishPdf" target="_blank">Read in English</a>
+        }
+        @if (!minePending)
+        {
+          <a class="btn btn-outline-primary" asp-action="Submit" asp-route-id="@Model.Id">@(mine?.Status == TranslationStatus.Rejected ? "Send a new version" : "Translate to Bulgarian")</a>
+        }
+      }
+    </div>
+  </div>
+
+  <aside class="book-ai-panel" aria-labelledby="book-ai-title">
+    <h2 id="book-ai-title"><span aria-hidden="true">✦</span> AI Summary</h2>
+    <div class="book-ai-section">
+      <h3>Spoiler-free summary</h3>
+      <p>AI summary generation is unavailable.</p>
+    </div>
+    <div class="book-ai-section">
+      <h3>Key literary themes</h3>
+      <p>No AI-generated themes are available for this book.</p>
+    </div>
+  </aside>
 </div>
+
 @if (read && bg != null)
 {
   <hr />
-  <div style="white-space:pre-wrap;max-width:70ch;line-height:1.7">@bg.Text</div>
+  <div class="book-translation-text">@bg.Text</div>
 }

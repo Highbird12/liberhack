@@ -1,0 +1,132 @@
+.literary-map-section {
+    --map-border: #d8d1c0;
+    --map-olive: #81936b;
+    margin: 0 0 36px;
+    padding: clamp(16px, 3vw, 32px);
+    border: 1px solid var(--map-border);
+    background: #f6f1e5;
+    scroll-margin-top: 16px;
+}
+
+.literary-map-header,
+.literary-map-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+}
+
+.literary-map-header {
+    margin-bottom: 16px;
+}
+
+.literary-map-header h2 {
+    margin: 0 0 4px;
+    font-size: clamp(1.85rem, 4vw, 2.5rem);
+}
+
+.literary-map-header p,
+.literary-map-status {
+    margin: 0;
+    color: #62655a;
+}
+
+.literary-map-header a {
+    color: var(--accent-hover);
+}
+
+.literary-map-canvas,
+.literary-map-canvas.leaflet-container {
+    height: clamp(260px, 47vw, 510px);
+    border: 1px solid var(--map-border);
+    background: #faf7ee;
+    isolation: isolate;
+    font-family: inherit;
+}
+
+.literary-map-section .leaflet-control-zoom a,
+.literary-map-section .leaflet-tooltip {
+    color: var(--ink);
+    background: #faf7ee;
+}
+
+.literary-map-section .leaflet-control-zoom {
+    border: 1px solid var(--map-border);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.literary-map-section .leaflet-control-zoom a {
+    border-radius: 0;
+}
+
+.literary-map-section .leaflet-tooltip {
+    border-color: var(--map-border);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.literary-map-controls {
+    margin-top: 14px;
+}
+
+.literary-map-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+}
+
+.literary-map-legend::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    flex: none;
+    background: var(--map-olive);
+    border: 1px solid var(--accent);
+}
+
+.literary-map-picker {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    max-width: 100%;
+}
+
+.literary-map-picker select {
+    width: min(100%, 16rem);
+    padding: 6px 8px;
+    border: 1px solid #a49f90;
+    color: var(--ink);
+    background: #faf7ee;
+}
+
+.literary-map-section :focus-visible {
+    outline: 2px solid var(--accent-hover);
+    outline-offset: 2px;
+}
+
+.literary-map-status:not(:empty) {
+    margin-top: 12px;
+}
+
+.literary-map-results {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--map-border);
+}
+
+.literary-map-results h3 {
+    margin-bottom: 8px;
+}
+
+.literary-map-results .book-grid {
+    padding-bottom: 0;
+}
+
+.literary-map-results .book-grid > p {
+    grid-column: 1 / -1;
+    margin: 0;
+}
